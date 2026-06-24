@@ -1,0 +1,21 @@
+---
+// Buttondown newsletter signup — renders only when PUBLIC_BUTTONDOWN_USER is set.
+const user = import.meta.env.PUBLIC_BUTTONDOWN_USER;
+---
+{user && (
+  <form
+    class="newsletter"
+    action={`https://buttondown.com/api/emails/embed-subscribe/${user}`}
+    method="post"
+    target="popupwindow"
+    onsubmit={`window.open('https://buttondown.com/${user}', 'popupwindow')`}
+  >
+    <h4>The Wealthy Monk newsletter</h4>
+    <p style="margin:0 0 0.6rem;font-size:0.88rem;color:#c6d2dd;">Money ideas in your inbox. No spam.</p>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <input type="email" name="email" placeholder="you@example.com" required
+        style="flex:1;min-width:180px;padding:0.5rem 0.7rem;border-radius:8px;border:1px solid #ffffff33;background:#ffffff14;color:#fff;" />
+      <button type="submit" class="btn">Subscribe</button>
+    </div>
+  </form>
+)}

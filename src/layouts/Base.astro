@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import SiteNav from '../components/SiteNav.astro';
+import Newsletter from '../components/Newsletter.astro';
 import { getCollection } from 'astro:content';
 import { SITE, pageTitle, canonical } from '../lib/seo.ts';
 
@@ -71,6 +72,7 @@ const cfaToken = import.meta.env.PUBLIC_CFA_TOKEN;
             <li><a href={SITE.social.x} rel="noopener">X / Twitter</a></li>
           </ul>
         </div>
+        <div style="flex-basis:260px;"><Newsletter /></div>
       </div>
       <div class="container" style="margin-top:1.5rem;font-size:0.8rem;color:#7f8fa0;">
         © {new Date().getFullYear()} The Wealthy Monk. For education only — not financial advice.

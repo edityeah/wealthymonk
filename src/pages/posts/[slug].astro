@@ -5,6 +5,7 @@ import Base from '../../layouts/Base.astro';
 import CategoryChips from '../../components/CategoryChips.astro';
 import Disclaimer from '../../components/Disclaimer.astro';
 import SeriesNav from '../../components/SeriesNav.astro';
+import Comments from '../../components/Comments.astro';
 import { getAllPosts, postSlug, getAdjacentInSeries } from '../../lib/posts.ts';
 
 export async function getStaticPaths() {
@@ -54,5 +55,6 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 
     <SeriesNav prev={prev} next={next} />
     <Disclaimer />
+    <Comments />
   </article>
 </Base>

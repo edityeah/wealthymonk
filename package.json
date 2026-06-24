@@ -1,0 +1,37 @@
+{
+  "name": "wealthy-monk",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build:content": "tsx --env-file-if-exists=.env scripts/build-content.ts",
+    "build:search": "pagefind --site dist",
+    "build": "npm run build:content && astro build && npm run build:search",
+    "migrate": "tsx --env-file-if-exists=.env scripts/migrate-wp/migrate.ts",
+    "test": "node --import tsx --test scripts/migrate-wp/*.test.ts",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=wealthy-monk --branch=main",
+    "preview": "astro preview",
+    "astro": "astro",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.0.0",
+    "@astrojs/rss": "^4.0.0",
+    "@astrojs/sitemap": "^3.2.0",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/source-serif-4": "^5.2.9",
+    "@notionhq/client": "^2.2.15",
+    "astro": "^5.0.0",
+    "cheerio": "^1.2.0",
+    "fast-xml-parser": "^5.8.0",
+    "pagefind": "^1.5.2",
+    "reading-time": "^1.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.98.0"
+  }
+}

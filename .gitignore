@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+.wrangler/
+.env
+# Notion-sourced content and mirrored images are rebuilt each deploy
+src/content/posts/notion/
+public/img/generated/
+.DS_Store

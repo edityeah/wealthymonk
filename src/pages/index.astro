@@ -1,0 +1,45 @@
+---
+import Base from '../layouts/Base.astro';
+import PostCard from '../components/PostCard.astro';
+import { getAllPosts, postSlug } from '../lib/posts.ts';
+
+const posts = await getAllPosts();
+const [featured, ...rest] = posts;
+const recent = rest.slice(0, 9);
+const featDate = featured?.data.publishDate.toLocaleDateString('en-IN', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+---
+<Base>
+  {featured && (
+    <section class="hero">
+      <div>
+        <span class="chip">{featured.data.category}</span>
+        <h1><a href={`/posts/${postSlug(featured)}/`}>{featured.data.title}</a></h1>
+        <p style="color:var(--muted);">{featured.data.excerpt}</p>
+        <p class="article-meta">{featDate}</p>
+        <a class="btn" href={`/posts/${postSlug(featured)}/`}>Read article</a>
+      </div>
+      {featured.data.cover && (
+        <a href={`/posts/${postSlug(featured)}/`}>
+          <img src={featured.data.cover} alt={featured.data.title} />
+        </a>
+      )}
+    </section>
+  )}
+
+  <div class="promo">
+    <div>
+      <h3>New to the markets?</h3>
+      <p style="margin:0;color:#c6d2dd;">Take the free InvestED course — markets explained from scratch.</p>
+    </div>
+    <a class="btn" href="/invested/">Start InvestED →</a>
+  </div>
+
+  <h2 class="section-title">Latest articles</h2>
+  <div class="post-grid">
+    {recent.map((post) => <PostCard post={post} />)}
+  </div>
+
+  <p style="text-align:center;margin:2rem 0;"><a href="/archive/">See all articles →</a></p>
+</Base>

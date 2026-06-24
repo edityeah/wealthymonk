@@ -1,0 +1,34 @@
+---
+import { CATEGORIES, slugifyTag } from '../lib/categories.ts';
+---
+<nav class="nav">
+  <a class="brand" href="/">
+    The Wealthy Monk
+    <small>Healthier wallet, happier you!</small>
+  </a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/invested/">InvestED</a>
+    {CATEGORIES.map((c) => (
+      <a href={`/category/${slugifyTag(c)}/`}>{c}</a>
+    ))}
+    <a href="/about/">About</a>
+    <a href="/search/" aria-label="Search">⌕</a>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">◐</button>
+  </div>
+</nav>
+<script is:inline>
+  (() => {
+    const root = document.documentElement;
+    const saved = localStorage.getItem('theme');
+    if (saved) root.setAttribute('data-theme', saved);
+    const btn = document.getElementById('theme-toggle');
+    btn?.addEventListener('click', () => {
+      const cur = root.getAttribute('data-theme');
+      const dark = cur ? cur === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      const next = dark ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    });
+  })();
+</script>

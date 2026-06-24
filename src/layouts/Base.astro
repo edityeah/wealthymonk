@@ -1,0 +1,88 @@
+---
+import '../styles/global.css';
+import SiteNav from '../components/SiteNav.astro';
+import { getCollection } from 'astro:content';
+import { SITE, pageTitle, canonical } from '../lib/seo.ts';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+const { title, description, image } = Astro.props;
+const desc = description ?? SITE.description;
+const url = canonical(Astro.url.pathname);
+
+const footerPages = (await getCollection('pages'))
+  .filter((p) => p.data.showInFooter)
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
+
+const cfaToken = import.meta.env.PUBLIC_CFA_TOKEN;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle(title)}</title>
+    <meta name="description" content={desc} />
+    <link rel="canonical" href={url} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle(title)} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:url" content={url} />
+    {image && <meta property="og:image" content={new URL(image, SITE.url).href} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="alternate" type="application/rss+xml" title={SITE.title} href="/rss.xml" />
+    <slot name="head" />
+  </head>
+  <body>
+    <header class="site-header"><SiteNav /></header>
+    <main class="container"><slot /></main>
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div>
+          <h4>The Wealthy Monk</h4>
+          <p style="max-width:28ch;font-size:0.9rem;">{SITE.tagline}</p>
+        </div>
+        <div>
+          <h4>Read</h4>
+          <ul>
+            <li><a href="/invested/">InvestED course</a></li>
+            <li><a href="/archive/">Archive</a></li>
+            <li><a href="/search/">Search</a></li>
+            <li><a href="/rss.xml">RSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Site</h4>
+          <ul>
+            {footerPages.map((p) => (
+              <li><a href={`/${p.data.slug}/`}>{p.data.title}</a></li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4>Follow</h4>
+          <ul>
+            <li><a href={SITE.social.facebook} rel="noopener">Facebook</a></li>
+            <li><a href={SITE.social.instagram} rel="noopener">Instagram</a></li>
+            <li><a href={SITE.social.x} rel="noopener">X / Twitter</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="container" style="margin-top:1.5rem;font-size:0.8rem;color:#7f8fa0;">
+        © {new Date().getFullYear()} The Wealthy Monk. For education only — not financial advice.
+      </div>
+    </footer>
+    {cfaToken && (
+      <script
+        is:inline
+        defer
+        src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon={`{"token": "${cfaToken}"}`}
+      ></script>
+    )}
+  </body>
+</html>

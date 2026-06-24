@@ -1,0 +1,23 @@
+---
+import type { Post } from '../lib/posts.ts';
+import { postSlug } from '../lib/posts.ts';
+
+interface Props { post: Post; }
+const { post } = Astro.props;
+const slug = postSlug(post);
+const date = post.data.publishDate.toLocaleDateString('en-IN', {
+  year: 'numeric', month: 'short', day: 'numeric',
+});
+---
+<article class="card">
+  {post.data.cover && (
+    <a href={`/posts/${slug}/`}>
+      <img src={post.data.cover} alt={post.data.title} loading="lazy" />
+    </a>
+  )}
+  <div class="card-body">
+    <span class="meta">{post.data.category} · {date}</span>
+    <h3><a href={`/posts/${slug}/`}>{post.data.title}</a></h3>
+    {post.data.excerpt && <p class="excerpt">{post.data.excerpt}</p>}
+  </div>
+</article>

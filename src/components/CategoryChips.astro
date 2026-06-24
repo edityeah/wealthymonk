@@ -1,0 +1,17 @@
+---
+import { slugifyTag } from '../lib/categories.ts';
+
+interface Props {
+  category?: string;
+  tags?: string[];
+}
+const { category, tags = [] } = Astro.props;
+---
+<div class="chips">
+  {category && (
+    <a class="chip" href={`/category/${slugifyTag(category)}/`}>{category}</a>
+  )}
+  {tags.slice(0, 6).map((t) => (
+    <a class="chip" href={`/tags/${slugifyTag(t)}/`}>#{t}</a>
+  ))}
+</div>

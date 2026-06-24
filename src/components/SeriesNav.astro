@@ -1,0 +1,26 @@
+---
+import type { Post } from '../lib/posts.ts';
+import { postSlug } from '../lib/posts.ts';
+
+interface Props {
+  prev: Post | null;
+  next: Post | null;
+}
+const { prev, next } = Astro.props;
+---
+{(prev || next) && (
+  <nav class="series-nav" aria-label="Course navigation">
+    {prev ? (
+      <a class="prev" href={`/posts/${postSlug(prev)}/`}>
+        <span class="label">← Previous</span>
+        {prev.data.title}
+      </a>
+    ) : <span></span>}
+    {next ? (
+      <a class="next" href={`/posts/${postSlug(next)}/`}>
+        <span class="label">Next →</span>
+        {next.data.title}
+      </a>
+    ) : <span></span>}
+  </nav>
+)}

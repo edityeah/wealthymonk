@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Search" description="Search The Wealthy Monk.">
+  <section class="prose" style="padding-top:2rem;">
+    <h1>Search</h1>
+    <div id="search"></div>
+  </section>
+  <link slot="head" rel="stylesheet" href="/pagefind/pagefind-ui.css" />
+  <script is:inline src="/pagefind/pagefind-ui.js"></script>
+  <script is:inline>
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.PagefindUI) {
+        new window.PagefindUI({ element: '#search', showSubResults: true, showImages: false });
+      }
+    });
+  </script>
+</Base>

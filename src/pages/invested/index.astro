@@ -1,0 +1,31 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getSeries, postSlug } from '../../lib/posts.ts';
+
+const chapters = await getSeries('InvestED');
+---
+<Base title="InvestED — Stock Markets, from scratch" description="A free, structured course on the stock market — start at Chapter 1 and build up.">
+  <section class="prose" style="padding-top:2rem;">
+    <h1>InvestED</h1>
+    <p style="color:var(--muted);font-size:1.1rem;">
+      A free, plain-English course on how markets really work. Start at the
+      beginning and work your way through — each chapter builds on the last.
+    </p>
+  </section>
+
+  <ol class="course-list">
+    {chapters.map((c) => (
+      <li>
+        <span class="num">{c.data.seriesOrder}</span>
+        <div>
+          <a href={`/posts/${postSlug(c)}/`} style="font-family:var(--serif);font-size:1.15rem;font-weight:600;">
+            {c.data.title.replace(/^Chapter\s+\d+[:.]\s*/i, '')}
+          </a>
+          {c.data.excerpt && <p style="margin:0.3rem 0 0;color:var(--muted);font-size:0.92rem;">{c.data.excerpt}</p>}
+        </div>
+      </li>
+    ))}
+  </ol>
+
+  {chapters.length === 0 && <p class="prose">Chapters coming soon.</p>}
+</Base>

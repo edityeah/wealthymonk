@@ -1,0 +1,58 @@
+---
+import { render } from 'astro:content';
+import readingTime from 'reading-time';
+import Base from '../../layouts/Base.astro';
+import CategoryChips from '../../components/CategoryChips.astro';
+import Disclaimer from '../../components/Disclaimer.astro';
+import SeriesNav from '../../components/SeriesNav.astro';
+import { getAllPosts, postSlug, getAdjacentInSeries } from '../../lib/posts.ts';
+
+export async function getStaticPaths() {
+  const posts = await getAllPosts();
+  return posts.map((post) => ({ params: { slug: postSlug(post) }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const { prev, next } = await getAdjacentInSeries(post);
+
+const rt = readingTime(post.body ?? '');
+const date = post.data.publishDate.toLocaleDateString('en-IN', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+<Base title={post.data.title} description={post.data.excerpt} image={post.data.cover}>
+  <article class="prose">
+    <header class="article-header">
+      {post.data.series && (
+        <a class="chip" href="/invested/">{post.data.series} · Chapter {post.data.seriesOrder}</a>
+      )}
+      <h1>{post.data.title}</h1>
+      <p class="article-meta">{date} · {rt.text}</p>
+      <CategoryChips category={post.data.category} tags={post.data.tags} />
+    </header>
+
+    {post.data.cover && <img src={post.data.cover} alt={post.data.title} />}
+
+    {toc.length >= 3 && (
+      <nav class="toc" aria-label="Table of contents">
+        <strong>In this article</strong>
+        <ol>
+          {toc.map((h) => (
+            <li style={h.depth === 3 ? 'margin-left:1rem' : ''}>
+              <a href={`#${h.slug}`}>{h.text}</a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    )}
+
+    <div class="article-body">
+      <Content />
+    </div>
+
+    <SeriesNav prev={prev} next={next} />
+    <Disclaimer />
+  </article>
+</Base>

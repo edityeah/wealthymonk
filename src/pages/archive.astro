@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import { getAllPosts, postSlug } from '../lib/posts.ts';
+
+const posts = await getAllPosts();
+const byYear = new Map<number, typeof posts>();
+for (const p of posts) {
+  const y = p.data.publishDate.getFullYear();
+  if (!byYear.has(y)) byYear.set(y, []);
+  byYear.get(y)!.push(p);
+}
+const years = [...byYear.keys()].sort((a, b) => b - a);
+---
+<Base title="Archive" description="Every article on The Wealthy Monk.">
+  <h1 class="section-title" style="margin-top:2rem;">Archive</h1>
+  {years.map((year) => (
+    <section class="prose">
+      <h2>{year}</h2>
+      <ul>
+        {byYear.get(year)!.map((p) => (
+          <li>
+            <a href={`/posts/${postSlug(p)}/`}>{p.data.title}</a>
+            <span style="color:var(--muted);"> — {p.data.category}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</Base>

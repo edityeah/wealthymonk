@@ -3,7 +3,8 @@ dist/
 .astro/
 .wrangler/
 .env
-# Notion-sourced content and mirrored images are rebuilt each deploy
+# Notion-sourced content and mirrored images are rebuilt each deploy.
+# (Imported WordPress content under posts/imported/ IS committed.)
 src/content/posts/notion/
 public/img/generated/
 .DS_Store

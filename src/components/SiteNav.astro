@@ -21,7 +21,8 @@ import { CATEGORIES, slugifyTag } from '../lib/categories.ts';
   (() => {
     const root = document.documentElement;
     const saved = localStorage.getItem('theme');
-    if (saved) root.setAttribute('data-theme', saved);
+    // Default to light; only go dark if the visitor explicitly chose it.
+    root.setAttribute('data-theme', saved || 'light');
     const btn = document.getElementById('theme-toggle');
     btn?.addEventListener('click', () => {
       const cur = root.getAttribute('data-theme');

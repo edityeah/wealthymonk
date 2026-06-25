@@ -1,0 +1,49 @@
+---
+interface Props { slug: string; }
+const { slug } = Astro.props;
+---
+<button type="button" class="like-btn" data-slug={slug} aria-label="Like this post" aria-pressed="false">
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+  </svg>
+  <span class="like-count" aria-live="polite">…</span>
+</button>
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.like-btn').forEach((btn) => {
+    const slug = btn.dataset.slug;
+    if (!slug) return;
+    const counter = btn.querySelector<HTMLSpanElement>('.like-count');
+    const storageKey = `liked:${slug}`;
+    if (localStorage.getItem(storageKey) === '1') {
+      btn.classList.add('liked');
+      btn.setAttribute('aria-pressed', 'true');
+    }
+    fetch(`/api/likes/${encodeURIComponent(slug)}`)
+      .then((r) => (r.ok ? r.json() : { count: 0 }))
+      .then((d) => { if (counter) counter.textContent = String(d.count ?? 0); })
+      .catch(() => { if (counter) counter.textContent = '0'; });
+
+    btn.addEventListener('click', async () => {
+      if (btn.classList.contains('busy')) return;
+      btn.classList.add('busy');
+      const cur = Number(counter?.textContent ?? '0') || 0;
+      if (!btn.classList.contains('liked')) {
+        if (counter) counter.textContent = String(cur + 1);
+        btn.classList.add('liked');
+        btn.setAttribute('aria-pressed', 'true');
+      }
+      try {
+        const r = await fetch(`/api/likes/${encodeURIComponent(slug)}`, { method: 'POST' });
+        if (r.ok) {
+          const d = await r.json();
+          if (counter) counter.textContent = String(d.count ?? cur + 1);
+          localStorage.setItem(storageKey, '1');
+        }
+      } catch (err) {
+        console.error('like failed', err);
+      } finally {
+        btn.classList.remove('busy');
+      }
+    });
+  });
+</script>

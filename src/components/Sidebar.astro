@@ -1,0 +1,42 @@
+---
+import { CATEGORIES, slugifyTag } from '../lib/categories.ts';
+import { getAllPosts, postSlug } from '../lib/posts.ts';
+
+const posts = await getAllPosts();
+const counts = new Map<string, number>();
+for (const p of posts) {
+  if (p.data.category) counts.set(p.data.category, (counts.get(p.data.category) ?? 0) + 1);
+}
+const recent = posts.slice(0, 5);
+---
+<aside class="sidebar">
+  <div class="sidebar-card">
+    <h3>Categories</h3>
+    <ul class="sidebar-cats">
+      {CATEGORIES.map((c) => (
+        <li>
+          <a href={`/category/${slugifyTag(c)}/`}>{c}</a>
+          <span class="count">{counts.get(c) ?? 0}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <div class="sidebar-card">
+    <h3>Recent posts</h3>
+    <ul class="sidebar-recent">
+      {recent.map((p) => (
+        <li>
+          <a href={`/posts/${postSlug(p)}/`}>{p.data.title}</a>
+          <span class="meta">{p.data.publishDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <div class="sidebar-card">
+    <h3>Start here</h3>
+    <p style="margin:0 0 0.7rem;font-size:0.9rem;color:var(--muted);">New to markets? Take the free course from the top.</p>
+    <a class="btn" href="/invested/">InvestED →</a>
+  </div>
+</aside>

@@ -7,17 +7,17 @@
 
 /* ── Design tokens ───────────────────────────────────────────────────────── */
 :root {
-  --navy: #0f2233;
-  --navy-700: #16304a;
-  --accent: #1f9d6b;        /* trust/positive green */
-  --accent-700: #167a52;
+  --navy: #1f2937;          /* charcoal — header/footer */
+  --navy-700: #111827;
+  --accent: #0f9d8f;        /* teal */
+  --accent-700: #0a6d63;    /* darker teal for link text on white */
   --gold: #c79a3a;
 
-  --bg: #fbfaf7;            /* warm paper */
+  --bg: #f6f8f9;            /* cool off-white page */
   --surface: #ffffff;
-  --text: #1c2733;
-  --muted: #5c6b7a;
-  --border: #e7e3da;
+  --text: #1a2027;
+  --muted: #5b6671;
+  --border: #e6e9ec;
   --link: var(--accent-700);
 
   --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
@@ -30,32 +30,17 @@
 }
 
 :root[data-theme='dark'] {
-  --navy: #0a1722;
-  --navy-700: #16304a;
-  --accent: #3fc78f;
-  --accent-700: #5bd5a3;
-  --bg: #0d1620;
-  --surface: #131f2b;
+  --navy: #131a22;
+  --navy-700: #0c1117;
+  --accent: #2dd4bf;
+  --accent-700: #5eead4;
+  --bg: #0e141a;
+  --surface: #161f29;
   --text: #e7edf3;
-  --muted: #9bb0c2;
-  --border: #25323f;
+  --muted: #9aa7b4;
+  --border: #243140;
   --link: var(--accent);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --navy: #0a1722;
-    --accent: #3fc78f;
-    --accent-700: #5bd5a3;
-    --bg: #0d1620;
-    --surface: #131f2b;
-    --text: #e7edf3;
-    --muted: #9bb0c2;
-    --border: #25323f;
-    --link: var(--accent);
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
-  }
 }
 
 /* ── Base ────────────────────────────────────────────────────────────────── */
@@ -168,3 +153,64 @@ img { max-width: 100%; height: auto; border-radius: var(--radius); }
 .btn:hover { background: var(--accent-700); }
 
 .skip-link { position: absolute; left: -999px; }
+
+/* ── Layout with sidebar ─────────────────────────────────────────────────── */
+.with-sidebar { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 2.5rem; align-items: start; }
+@media (max-width: 900px) { .with-sidebar { grid-template-columns: 1fr; } }
+.sidebar { display: flex; flex-direction: column; gap: 1.5rem; position: sticky; top: 1rem; }
+.sidebar-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.2rem; box-shadow: var(--shadow); }
+.sidebar-card h3 { font-size: 1rem; margin: 0 0 0.7rem; }
+.sidebar-cats { list-style: none; padding: 0; margin: 0; }
+.sidebar-cats li { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
+.sidebar-cats li:last-child { border-bottom: 0; }
+.sidebar-cats .count { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent-700); border-radius: 999px; font-size: 0.72rem; padding: 0.1rem 0.5rem; }
+.sidebar-recent { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.sidebar-recent a { font-size: 0.9rem; line-height: 1.35; display: block; }
+.sidebar-recent .meta { color: var(--muted); font-size: 0.75rem; }
+
+/* ── Reading progress ────────────────────────────────────────────────────── */
+.reading-progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 50; transition: width 0.1s linear; }
+
+/* ── Share buttons ───────────────────────────────────────────────────────── */
+.share { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin: 1.5rem 0; }
+.share .label { font-size: 0.85rem; color: var(--muted); margin-right: 0.2rem; }
+.share a, .share button { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: 0.4rem 0.85rem; font-size: 0.82rem; font-family: var(--sans); cursor: pointer; text-decoration: none; }
+.share a:hover, .share button:hover { border-color: var(--accent); color: var(--accent-700); }
+
+/* ── Post actions (like) ─────────────────────────────────────────────────── */
+.post-actions { display: flex; align-items: center; gap: 1rem; margin: 2rem 0 0; }
+.like-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border: 1px solid var(--border); background: var(--surface); color: var(--muted); border-radius: 999px; font-family: var(--sans); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease; user-select: none; }
+.like-btn:hover, .like-btn.liked { color: var(--accent-700); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.like-btn svg { transition: transform 0.2s ease; }
+.like-btn.liked svg { transform: scale(1.15); }
+.like-btn.busy { opacity: 0.7; }
+.like-count { font-variant-numeric: tabular-nums; }
+
+/* ── Related posts ───────────────────────────────────────────────────────── */
+.related { max-width: var(--maxw); margin: 3rem auto 0; }
+
+/* ── Comments ────────────────────────────────────────────────────────────── */
+.comment-section { max-width: var(--maxw); margin: 3.5rem auto 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+.comment-section h2 { font-size: 1.5rem; margin: 0 0 0.4rem; }
+.comment-intro { font-size: 0.9rem; color: var(--muted); margin: 0 0 1.5rem; }
+.comment-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; margin-bottom: 2rem; display: grid; gap: 1rem; }
+.comment-form .field { display: grid; gap: 0.4rem; }
+.comment-form .field > span { font-size: 0.85rem; font-weight: 600; }
+.comment-form .field > span small { font-weight: 400; color: var(--muted); }
+.comment-form input, .comment-form textarea { padding: 0.6rem 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-family: var(--sans); font-size: 0.95rem; }
+.comment-form textarea { resize: vertical; min-height: 6rem; line-height: 1.5; }
+.comment-form input:focus, .comment-form textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.form-row { display: flex; align-items: center; gap: 1rem; }
+.comment-form .submit { padding: 0.6rem 1.4rem; background: var(--accent); color: #fff; border: 0; border-radius: 999px; font: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+.comment-form .submit:hover:not(:disabled) { background: var(--accent-700); }
+.comment-form .submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.form-status { font-size: 0.85rem; color: var(--muted); }
+.form-status.ok { color: var(--accent-700); }
+.form-status.error { color: #b03c2a; }
+.comment-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; }
+.comment-list .loading, .comment-list .empty { font-size: 0.9rem; color: var(--muted); font-style: italic; }
+.comment-item { padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; }
+.comment-meta { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; display: flex; gap: 0.5rem; align-items: center; }
+.comment-name { color: var(--accent-700); font-weight: 600; }
+.comment-body { margin: 0; line-height: 1.55; white-space: pre-wrap; }

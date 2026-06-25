@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import PostCard from '../components/PostCard.astro';
+import Sidebar from '../components/Sidebar.astro';
 import { getAllPosts, postSlug } from '../lib/posts.ts';
 
 const posts = await getAllPosts();
@@ -37,9 +38,13 @@ const featDate = featured?.data.publishDate.toLocaleDateString('en-IN', {
   </div>
 
   <h2 class="section-title">Latest articles</h2>
-  <div class="post-grid">
-    {recent.map((post) => <PostCard post={post} />)}
+  <div class="with-sidebar">
+    <div>
+      <div class="post-grid">
+        {recent.map((post) => <PostCard post={post} />)}
+      </div>
+      <p style="text-align:center;margin:2rem 0;"><a href="/archive/">See all articles →</a></p>
+    </div>
+    <Sidebar />
   </div>
-
-  <p style="text-align:center;margin:2rem 0;"><a href="/archive/">See all articles →</a></p>
 </Base>

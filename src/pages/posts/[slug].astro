@@ -5,7 +5,11 @@ import Base from '../../layouts/Base.astro';
 import CategoryChips from '../../components/CategoryChips.astro';
 import Disclaimer from '../../components/Disclaimer.astro';
 import SeriesNav from '../../components/SeriesNav.astro';
-import Comments from '../../components/Comments.astro';
+import ReadingProgress from '../../components/ReadingProgress.astro';
+import ShareButtons from '../../components/ShareButtons.astro';
+import LikeButton from '../../components/LikeButton.astro';
+import RelatedPosts from '../../components/RelatedPosts.astro';
+import CommentSection from '../../components/CommentSection.astro';
 import { getAllPosts, postSlug, getAdjacentInSeries } from '../../lib/posts.ts';
 
 export async function getStaticPaths() {
@@ -14,8 +18,14 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
+const slug = postSlug(post);
 const { Content, headings } = await render(post);
 const { prev, next } = await getAdjacentInSeries(post);
+
+const all = await getAllPosts();
+const related = all
+  .filter((p) => postSlug(p) !== slug && p.data.category === post.data.category)
+  .slice(0, 3);
 
 const rt = readingTime(post.body ?? '');
 const date = post.data.publishDate.toLocaleDateString('en-IN', {
@@ -24,6 +34,7 @@ const date = post.data.publishDate.toLocaleDateString('en-IN', {
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 ---
 <Base title={post.data.title} description={post.data.excerpt} image={post.data.cover}>
+  <ReadingProgress />
   <article class="prose">
     <header class="article-header">
       {post.data.series && (
@@ -53,8 +64,18 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
       <Content />
     </div>
 
+    <div class="post-actions">
+      <LikeButton slug={slug} />
+    </div>
+    <ShareButtons title={post.data.title} path={`/posts/${slug}/`} />
+
     <SeriesNav prev={prev} next={next} />
     <Disclaimer />
-    <Comments />
   </article>
+
+  <RelatedPosts posts={related} />
+
+  <div class="prose">
+    <CommentSection slug={slug} />
+  </div>
 </Base>

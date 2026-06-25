@@ -1,0 +1,110 @@
+---
+interface Props { slug: string; }
+const { slug } = Astro.props;
+---
+<section class="comment-section" id="comments">
+  <h2>Comments</h2>
+  <p class="comment-intro">Have a thought or a question? Leave a comment — no account needed.</p>
+
+  <form class="comment-form" data-slug={slug}>
+    <label class="field">
+      <span>Your name</span>
+      <input name="name" type="text" required maxlength="60" autocomplete="name" />
+    </label>
+    <label class="field">
+      <span>Email <small>(optional, never shown)</small></span>
+      <input name="email" type="email" maxlength="120" autocomplete="email" />
+    </label>
+    <label class="field">
+      <span>Comment</span>
+      <textarea name="body" required maxlength="2000" rows="4" placeholder="Share your thoughts..."></textarea>
+    </label>
+    <label class="hp-field" aria-hidden="true" tabindex="-1">
+      Leave this empty
+      <input name="hp" type="text" autocomplete="off" tabindex="-1" />
+    </label>
+    <div class="form-row">
+      <button type="submit" class="submit">Post comment</button>
+      <span class="form-status" aria-live="polite"></span>
+    </div>
+  </form>
+
+  <ol class="comment-list" data-slug={slug}>
+    <li class="loading">Loading comments…</li>
+  </ol>
+</section>
+
+<script>
+  type Comment = { id: string; name: string; body: string; date: string };
+
+  function escapeHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function formatDate(iso: string): string {
+    try { return new Date(iso).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }); }
+    catch { return iso.slice(0, 10); }
+  }
+  function renderList(list: HTMLOListElement, comments: Comment[]) {
+    if (!comments.length) { list.innerHTML = '<li class="empty">No comments yet — be the first.</li>'; return; }
+    list.innerHTML = comments
+      .slice()
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .map((c) => `<li class="comment-item"><div class="comment-meta"><span class="comment-name">${escapeHtml(c.name)}</span><span>·</span><span>${formatDate(c.date)}</span></div><p class="comment-body">${escapeHtml(c.body)}</p></li>`)
+      .join('');
+  }
+  async function load(slug: string, list: HTMLOListElement) {
+    try {
+      const r = await fetch(`/api/comments/${encodeURIComponent(slug)}`);
+      const fresh = r.ok ? ((await r.json()) as { comments: Comment[] }).comments ?? [] : [];
+      renderList(list, fresh);
+    } catch { list.innerHTML = '<li class="empty">Comments are unavailable right now.</li>'; }
+  }
+
+  document.querySelectorAll<HTMLFormElement>('.comment-form').forEach((form) => {
+    const slug = form.dataset.slug;
+    if (!slug) return;
+    const list = document.querySelector<HTMLOListElement>(`.comment-list[data-slug="${CSS.escape(slug)}"]`);
+    if (!list) return;
+    const status = form.querySelector<HTMLSpanElement>('.form-status');
+    const submit = form.querySelector<HTMLButtonElement>('button.submit');
+    load(slug, list);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!submit || !status) return;
+      const fd = new FormData(form);
+      const body = {
+        name: String(fd.get('name') ?? ''),
+        email: String(fd.get('email') ?? ''),
+        body: String(fd.get('body') ?? ''),
+        hp: String(fd.get('hp') ?? ''),
+      };
+      submit.disabled = true;
+      status.textContent = 'Posting…';
+      status.className = 'form-status';
+      try {
+        const r = await fetch(`/api/comments/${encodeURIComponent(slug)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const d = await r.json();
+        if (!r.ok) {
+          status.textContent = d?.error ?? 'Could not post.';
+          status.className = 'form-status error';
+          submit.disabled = false;
+          return;
+        }
+        status.textContent = 'Posted! Thanks for joining the conversation.';
+        status.className = 'form-status ok';
+        form.reset();
+        await load(slug, list);
+      } catch {
+        status.textContent = 'Network error. Try again.';
+        status.className = 'form-status error';
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  });
+</script>

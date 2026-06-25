@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import PostCard from '../../components/PostCard.astro';
+import Sidebar from '../../components/Sidebar.astro';
 import { CATEGORIES, slugifyTag } from '../../lib/categories.ts';
 import { getPostsByCategory } from '../../lib/posts.ts';
 
@@ -17,7 +18,10 @@ const posts = await getPostsByCategory(category);
 <Base title={category} description={`Articles on ${category} from The Wealthy Monk.`}>
   <h1 class="section-title" style="margin-top:2rem;">{category}</h1>
   <p style="color:var(--muted);">{posts.length} article{posts.length === 1 ? '' : 's'}</p>
-  <div class="post-grid">
-    {posts.map((post) => <PostCard post={post} />)}
+  <div class="with-sidebar">
+    <div class="post-grid">
+      {posts.map((post) => <PostCard post={post} />)}
+    </div>
+    <Sidebar />
   </div>
 </Base>

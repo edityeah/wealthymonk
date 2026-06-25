@@ -109,6 +109,27 @@ file from `posts/imported/`** so the slug isn't duplicated.
   `PUBLIC_GISCUS_CATEGORY`, `PUBLIC_GISCUS_CATEGORY_ID` (from https://giscus.app).
 - **Buttondown newsletter:** set `PUBLIC_BUTTONDOWN_USER` to your username.
 
+## Likes & comments (Cloudflare KV)
+
+Likes and the native comment system are powered by Cloudflare Pages Functions in
+`functions/api/` backed by **KV**. They work in production once you bind two KV
+namespaces; locally under `npm run dev` they degrade gracefully (counts show 0,
+posting is a no-op) because Astro's dev server doesn't run Functions.
+
+Set up at deploy time:
+
+1. Cloudflare dashboard → **Workers & Pages → KV** → create two namespaces:
+   `wm_likes` and `wm_comments`.
+2. Your Pages project → **Settings → Functions → KV namespace bindings** → add:
+   - Variable name `LIKES` → `wm_likes`
+   - Variable name `COMMENTS` → `wm_comments`
+3. (Optional) Set `ADMIN_TOKEN` (Settings → Environment variables) to enable
+   `DELETE /api/comments/:slug?id=…` for moderation via an
+   `Authorization: Bearer <token>` header.
+
+To exercise Functions locally, run `npx wrangler pages dev dist` after a build
+(instead of `npm run dev`), with `--kv LIKES --kv COMMENTS`.
+
 ## WordPress migration (one-time)
 
 See [scripts/migrate-wp/README.md](scripts/migrate-wp/README.md).

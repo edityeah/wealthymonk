@@ -1,0 +1,27 @@
+---
+import { SITE } from '../lib/seo.ts';
+interface Props { title: string; path: string; }
+const { title, path } = Astro.props;
+const url = new URL(path, SITE.url).href;
+const t = encodeURIComponent(title);
+const u = encodeURIComponent(url);
+---
+<div class="share">
+  <span class="label">Share</span>
+  <a href={`https://twitter.com/intent/tweet?text=${t}&url=${u}`} target="_blank" rel="noopener" aria-label="Share on X">𝕏 Post</a>
+  <a href={`https://wa.me/?text=${t}%20${u}`} target="_blank" rel="noopener" aria-label="Share on WhatsApp">WhatsApp</a>
+  <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${u}`} target="_blank" rel="noopener" aria-label="Share on LinkedIn">LinkedIn</a>
+  <button type="button" class="copy-link" data-url={url} aria-label="Copy link">Copy link</button>
+</div>
+<script is:inline>
+  document.querySelectorAll('.copy-link').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.url);
+        const old = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = old; }, 1500);
+      } catch { /* ignore */ }
+    });
+  });
+</script>

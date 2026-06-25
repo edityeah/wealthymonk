@@ -40,10 +40,24 @@ function postSlug(p: WpPost): string {
   return slugify(p.title);
 }
 
-function firstParagraph(html: string): string {
-  const m = html.replace(/<!--[\s\S]*?-->/g, '').match(/<p[^>]*>([\s\S]*?)<\/p>/i);
-  const text = (m?.[1] ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-  return text.slice(0, 200);
+// Derive a clean ~160-char meta description from anywhere in the body text.
+// Robust to posts that open with a table, image, or heading (no leading <p>).
+function deriveExcerpt(html: string): string {
+  const text = html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
+    .replace(/\[[^\]]*\]/g, '') // drop shortcodes
+    .replace(/<[^>]+>/g, ' ')   // strip tags
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&#\d+;/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return '';
+  if (text.length <= 160) return text;
+  const cut = text.slice(0, 160);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 80 ? cut.slice(0, lastSpace) : cut).trimEnd() + '…';
 }
 
 async function downloadImage(url: string, destDir: string): Promise<string | null> {
@@ -114,7 +128,8 @@ async function main() {
     const tags = Array.from(new Set([...toTags(p.categories), ...p.tags]));
     const series = detectSeries(p.title, p.categories);
     if (series) chapters++;
-    const excerpt = (p.excerpt && p.excerpt.replace(/<[^>]+>/g, '').trim()) || firstParagraph(p.html);
+    const wpExcerpt = p.excerpt ? deriveExcerpt(p.excerpt) : '';
+    const excerpt = wpExcerpt || deriveExcerpt(p.html);
     const cover = p.featuredUrl ? urlMap.get(p.featuredUrl) : undefined;
     const body = htmlToMdx(p.html, urlMap);
 

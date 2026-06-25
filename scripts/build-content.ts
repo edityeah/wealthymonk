@@ -29,6 +29,20 @@ function yamlEscape(s: string): string {
   return '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
 }
 
+// Fallback meta description from the rendered body when no Excerpt is set.
+function deriveExcerpt(md: string): string {
+  const text = md
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/[#>*_`~|-]+/g, ' ')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length <= 160) return text;
+  const cut = text.slice(0, 160);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > 80 ? cut.slice(0, sp) : cut).trimEnd() + '…';
+}
+
 function frontmatter(props: Record<string, unknown>): string {
   const lines: string[] = ['---'];
   for (const [k, v] of Object.entries(props)) {
@@ -82,7 +96,7 @@ async function main() {
       series: props.series,
       seriesOrder: props.seriesOrder,
       cover,
-      excerpt: props.excerpt,
+      excerpt: props.excerpt || deriveExcerpt(body),
       originalUrl: props.originalUrl,
       originalDate: props.originalDate,
     });

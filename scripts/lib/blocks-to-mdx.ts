@@ -1,4 +1,5 @@
 import type { BlockObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import * as cheerio from 'cheerio';
 import { fetchBlocks } from './notion.js';
 import { mirrorImage } from './image-mirror.js';
 
@@ -87,6 +88,27 @@ type RichText = {
 
 function escapeMdx(s: string): string {
   return s.replace(/([\\{}<>])/g, '\\$1');
+}
+
+/**
+ * Make a raw HTML fragment (e.g. a preserved table) safe to embed in MDX.
+ * WordPress table markup is frequently malformed (unclosed <td>/<tr>), which
+ * MDX's strict JSX parser rejects — so we re-serialize through cheerio to
+ * balance tags, then self-close void elements and escape braces.
+ */
+function mdxSafeHtml(html: string): string {
+  let normalized: string;
+  try {
+    normalized = cheerio.load(html, null, false).html();
+  } catch {
+    normalized = html;
+  }
+  const selfClosed = normalized.replace(
+    /<(img|br|hr|input|source|col|area|base|link|meta)((?:\s[^>]*?)?)\s*(?<!\/)>/gi,
+    (_m, tag, attrs) => `<${tag}${attrs} />`,
+  );
+  const escaped = selfClosed.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
+  return '\n' + escaped + '\n';
 }
 
 function renderRich(rich: RichText[] | undefined): string {
@@ -189,6 +211,11 @@ async function renderBlock(
     case 'code': {
       const lang = b.code.language ?? '';
       const src = (b.code.rich_text as RichText[]).map((r) => r.plain_text).join('');
+      // Tables preserved as raw-HTML code blocks should render as real tables on
+      // the site (Notion keeps them as editable HTML). Inject the markup MDX-safely.
+      if (lang === 'html' && /<table/i.test(src) && !/<script/i.test(src)) {
+        return mdxSafeHtml(src);
+      }
       return '```' + lang + '\n' + src + '\n```';
     }
     case 'image': {

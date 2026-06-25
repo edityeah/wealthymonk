@@ -9,6 +9,7 @@
     "build:search": "pagefind --site dist",
     "build": "npm run build:content && astro build && npm run build:search",
     "migrate": "tsx --env-file-if-exists=.env scripts/migrate-wp/migrate.ts",
+    "push:notion": "tsx --env-file-if-exists=.env scripts/migrate-wp/push-to-notion.ts",
     "test": "node --import tsx --test scripts/migrate-wp/*.test.ts",
     "deploy": "npm run build && wrangler pages deploy dist --project-name=wealthy-monk --branch=main",
     "preview": "astro preview",

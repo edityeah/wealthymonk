@@ -248,7 +248,7 @@ function convertBlock(node: any, out: ConvertResult, $: cheerio.CheerioAPI): Blo
         type: 'code',
         code: {
           language: 'plain text',
-          rich_text: [{ type: 'text', text: { content: clip(text) } }],
+          rich_text: chunk([{ type: 'text', text: { content: text } }]),
         },
       };
     }
@@ -407,12 +407,14 @@ function imageBlock(src: string, alt: string, caption = ''): Block {
 
 function rawHtmlBlock(html: string, out: ConvertResult): Block {
   out.warnings.push('Preserved raw HTML as code block for manual review');
+  // Split across multiple ≤2000-char runs (Notion's per-run limit) instead of
+  // truncating — otherwise long tables lose all but their first ~2000 chars.
   return {
     object: 'block',
     type: 'code',
     code: {
       language: 'html',
-      rich_text: [{ type: 'text', text: { content: clip(html) } }],
+      rich_text: chunk([{ type: 'text', text: { content: html } }]),
     },
   };
 }

@@ -26,6 +26,7 @@ if (!TOKEN || !DB) {
 }
 const notion = new Client({ auth: TOKEN });
 const dryRun = process.argv.includes('--dry-run');
+const replace = process.argv.includes('--replace');
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -69,8 +70,8 @@ function optName(s: string): string {
   return s.replace(/,/g, ' ').trim().slice(0, 100);
 }
 
-async function existingSlugs(): Promise<Set<string>> {
-  const slugs = new Set<string>();
+async function existingSlugs(): Promise<Map<string, string>> {
+  const slugs = new Map<string, string>(); // slug -> pageId
   let cursor: string | undefined;
   do {
     const res = await backoff(() =>
@@ -79,7 +80,7 @@ async function existingSlugs(): Promise<Set<string>> {
     for (const page of res.results) {
       if (!isFullPage(page)) continue;
       const slug = (page.properties as any).Slug?.rich_text?.[0]?.plain_text;
-      if (slug) slugs.add(slug);
+      if (slug) slugs.set(slug, page.id);
     }
     cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
   } while (cursor);
@@ -90,8 +91,8 @@ async function main() {
   const { posts } = parseWxr(readFileSync(XML, 'utf8'));
   const published = posts.filter((p) => p.status === 'publish');
 
-  const existing = dryRun ? new Set<string>() : await existingSlugs();
-  console.log(`${published.length} published posts; ${existing.size} already in Notion.`);
+  const existing = dryRun ? new Map<string, string>() : await existingSlugs();
+  console.log(`${published.length} published posts; ${existing.size} already in Notion.${replace ? ' (--replace: existing will be archived + recreated)' : ''}`);
 
   let created = 0;
   let skipped = 0;
@@ -100,8 +101,14 @@ async function main() {
   for (const p of published) {
     const slug = postSlug(p);
     if (existing.has(slug)) {
-      skipped++;
-      continue;
+      if (!replace) {
+        skipped++;
+        continue;
+      }
+      if (!dryRun) {
+        await backoff(() => notion.pages.update({ page_id: existing.get(slug)!, archived: true }));
+        await sleep(250);
+      }
     }
 
     const category = mapCategory(p.categories);

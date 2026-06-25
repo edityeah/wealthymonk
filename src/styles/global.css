@@ -127,6 +127,17 @@ img { max-width: 100%; height: auto; border-radius: var(--radius); }
 .article-body thead th { background: var(--navy); color: #fff; position: sticky; top: 0; }
 .article-body tbody tr:nth-child(even) { background: color-mix(in srgb, var(--accent) 5%, transparent); }
 
+/* ── FAQ / details accordion ─────────────────────────────────────────────── */
+.article-body details { border: 1px solid var(--border); border-radius: var(--radius); margin: 0.8rem 0; background: var(--surface); overflow: hidden; }
+.article-body details summary { cursor: pointer; padding: 0.85rem 1.1rem; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 0.6rem; }
+.article-body details summary::-webkit-details-marker { display: none; }
+.article-body details summary::before { content: '+'; color: var(--accent-700); font-weight: 700; font-size: 1.1rem; line-height: 1; }
+.article-body details[open] summary::before { content: '–'; }
+.article-body details[open] summary { border-bottom: 1px solid var(--border); }
+.article-body details > :not(summary) { margin-left: 1.1rem; margin-right: 1.1rem; }
+.article-body details > :nth-child(2) { margin-top: 0.9rem; }
+.article-body details > :last-child { margin-bottom: 0.9rem; }
+
 /* ── Disclaimer callout ──────────────────────────────────────────────────── */
 .disclaimer { margin: 2.5rem auto 0; max-width: var(--maxw); border: 1px solid var(--border); border-left: 4px solid var(--gold); background: color-mix(in srgb, var(--gold) 8%, transparent); border-radius: 0 var(--radius) var(--radius) 0; padding: 0.9rem 1.1rem; font-size: 0.88rem; color: var(--muted); }
 

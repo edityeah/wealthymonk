@@ -279,6 +279,19 @@ async function renderBlock(
       }
       return lines.join('\n');
     }
+    case 'toggle': {
+      // Collapsible accordion → <details>/<summary> (e.g. FAQs).
+      const summary = (b.toggle.rich_text as RichText[]).map((r) => r.plain_text).join('').trim();
+      let inner = '';
+      if (b.has_children) {
+        const children = await fetchBlocks(b.id);
+        inner = await renderBlocks(children, slug, depth + 1, ctx);
+      }
+      const safeSummary = summary
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
+      return `<details>\n<summary>${safeSummary}</summary>\n\n${inner}\n\n</details>`;
+    }
     case 'table_of_contents':
     case 'breadcrumb':
     case 'column_list':

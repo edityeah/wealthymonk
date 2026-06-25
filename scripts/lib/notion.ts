@@ -38,8 +38,7 @@ function slugify(s: string): string {
     .replace(/[̀-ͯ]/g, '')
     .replace(/['’]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
+    .replace(/^-+|-+$/g, '');
 }
 
 export async function fetchPublishedPosts(): Promise<PageObjectResponse[]> {

@@ -306,6 +306,26 @@ function convertBlock(node: any, out: ConvertResult, $: cheerio.CheerioAPI): Blo
     case 'style':
       // Preserve as raw HTML code block.
       return rawHtmlBlock($.html(node), out);
+    case 'details': {
+      // FAQ accordion → Notion toggle block (collapsible in Notion + on site).
+      const summaryEl = findFirst(node, 'summary');
+      const summaryText = (summaryEl ? $(summaryEl).text() : '').trim() || 'Details';
+      const kids = (children as any[]).filter(
+        (c: any) => !(c.type === 'tag' && c.name.toLowerCase() === 'summary'),
+      );
+      const sub: ConvertResult = { blocks: [], imageUrls: [], warnings: [] };
+      walk(kids as CheerioElement[], sub, $);
+      out.imageUrls.push(...sub.imageUrls);
+      out.warnings.push(...sub.warnings);
+      return {
+        object: 'block',
+        type: 'toggle',
+        toggle: {
+          rich_text: chunk([{ type: 'text', text: { content: summaryText } }]),
+          children: sub.blocks.slice(0, 100),
+        },
+      };
+    }
     default:
       out.warnings.push(`Unknown HTML tag rendered as paragraph: <${tag}>`);
       {

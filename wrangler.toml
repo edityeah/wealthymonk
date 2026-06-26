@@ -1,0 +1,12 @@
+name = "wealthy-monk"
+compatibility_date = "2026-06-25"
+pages_build_output_dir = "dist"
+
+# KV namespaces backing the likes + comments Pages Functions (functions/api/).
+[[kv_namespaces]]
+binding = "LIKES"
+id = "18b0d640a90846558f392b16479a3c4c"
+
+[[kv_namespaces]]
+binding = "COMMENTS"
+id = "f5c70e7fb54c4875b169338d94b211b6"

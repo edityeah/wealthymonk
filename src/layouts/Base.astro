@@ -3,39 +3,87 @@ import '../styles/global.css';
 import SiteNav from '../components/SiteNav.astro';
 import Newsletter from '../components/Newsletter.astro';
 import { getCollection } from 'astro:content';
-import { SITE, pageTitle, canonical } from '../lib/seo.ts';
+import { SITE, pageTitle, canonical, abs, siteSchema } from '../lib/seo.ts';
 
 interface Props {
   title?: string;
   description?: string;
   image?: string;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  section?: string;
+  noindex?: boolean;
+  jsonLd?: object[];
 }
-const { title, description, image } = Astro.props;
+const {
+  title, description, image, type = 'website',
+  publishedTime, modifiedTime, section, noindex = false, jsonLd = [],
+} = Astro.props;
+
 const desc = description ?? SITE.description;
 const url = canonical(Astro.url.pathname);
+const fullTitle = pageTitle(title);
+const ogImage = abs(image);
+const robots = noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large';
+const schemas = [...siteSchema(), ...jsonLd];
 
 const footerPages = (await getCollection('pages'))
   .filter((p) => p.data.showInFooter)
   .sort((a, b) => a.data.title.localeCompare(b.data.title));
 
 const cfaToken = import.meta.env.PUBLIC_CFA_TOKEN;
+const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
 ---
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{pageTitle(title)}</title>
+    <title>{fullTitle}</title>
     <meta name="description" content={desc} />
+    <meta name="robots" content={robots} />
+    <meta name="theme-color" content="#1f2937" />
+    <meta name="author" content={SITE.author} />
     <link rel="canonical" href={url} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content={pageTitle(title)} />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={SITE.title} />
+    <meta property="og:locale" content={SITE.locale} />
+    <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={desc} />
     <meta property="og:url" content={url} />
-    {image && <meta property="og:image" content={new URL(image, SITE.url).href} />}
-    <meta name="twitter:card" content="summary_large_image" />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:alt" content={title ?? SITE.title} />}
+    {type === 'article' && publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {type === 'article' && modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+    {type === 'article' && section && <meta property="article:section" content={section} />}
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:site" content={SITE.twitter} />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={desc} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+
     <link rel="alternate" type="application/rss+xml" title={SITE.title} href="/rss.xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    {schemas.map((s) => (
+      <script type="application/ld+json" set:html={JSON.stringify(s)} />
+    ))}
+
+    {adsenseClient && (
+      <script
+        async
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+        crossorigin="anonymous"
+      ></script>
+    )}
+
     <slot name="head" />
   </head>
   <body>

@@ -3,6 +3,7 @@ import { render } from 'astro:content';
 import readingTime from 'reading-time';
 import Base from '../../layouts/Base.astro';
 import CategoryChips from '../../components/CategoryChips.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Disclaimer from '../../components/Disclaimer.astro';
 import SeriesNav from '../../components/SeriesNav.astro';
 import ReadingProgress from '../../components/ReadingProgress.astro';
@@ -10,7 +11,10 @@ import ShareButtons from '../../components/ShareButtons.astro';
 import LikeButton from '../../components/LikeButton.astro';
 import RelatedPosts from '../../components/RelatedPosts.astro';
 import CommentSection from '../../components/CommentSection.astro';
+import AdUnit from '../../components/AdUnit.astro';
 import { getAllPosts, postSlug, getAdjacentInSeries } from '../../lib/posts.ts';
+import { canonical, abs, articleSchema, breadcrumbSchema } from '../../lib/seo.ts';
+import { slugifyTag } from '../../lib/categories.ts';
 
 export async function getStaticPaths() {
   const posts = await getAllPosts();
@@ -32,9 +36,40 @@ const date = post.data.publishDate.toLocaleDateString('en-IN', {
   year: 'numeric', month: 'long', day: 'numeric',
 });
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+
+const url = canonical(`/posts/${slug}/`);
+const published = post.data.publishDate.toISOString();
+const modified = (post.data.originalDate ?? post.data.publishDate).toISOString();
+const crumbs = [
+  { name: 'Home', url: '/' },
+  ...(post.data.category ? [{ name: post.data.category, url: `/category/${slugifyTag(post.data.category)}/` }] : []),
+  { name: post.data.title, url: `/posts/${slug}/` },
+];
+const jsonLd = [
+  articleSchema({
+    title: post.data.title,
+    description: post.data.excerpt,
+    url,
+    image: abs(post.data.cover),
+    datePublished: published,
+    dateModified: modified,
+    section: post.data.category,
+  }),
+  breadcrumbSchema(crumbs),
+];
 ---
-<Base title={post.data.title} description={post.data.excerpt} image={post.data.cover}>
+<Base
+  title={post.data.title}
+  description={post.data.excerpt}
+  image={post.data.cover}
+  type="article"
+  publishedTime={published}
+  modifiedTime={modified}
+  section={post.data.category}
+  jsonLd={jsonLd}
+>
   <ReadingProgress />
+  <Breadcrumbs crumbs={crumbs} />
   <article class="prose">
     <header class="article-header">
       {post.data.series && (
@@ -45,7 +80,9 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
       <CategoryChips category={post.data.category} tags={post.data.tags} />
     </header>
 
-    {post.data.cover && <img src={post.data.cover} alt={post.data.title} />}
+    {post.data.cover && (
+      <img src={post.data.cover} alt={post.data.title} fetchpriority="high" decoding="async" />
+    )}
 
     {toc.length >= 3 && (
       <nav class="toc" aria-label="Table of contents">
@@ -63,6 +100,8 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
     <div class="article-body">
       <Content />
     </div>
+
+    <AdUnit />
 
     <div class="post-actions">
       <LikeButton slug={slug} />

@@ -86,5 +86,21 @@ export default defineConfig({
   ],
   markdown: {
     shikiConfig: { theme: 'github-light' },
+    rehypePlugins: [rehypeImgAttrs],
   },
 });
+
+// Add loading="lazy" + decoding="async" to in-article images for Core Web Vitals.
+function rehypeImgAttrs() {
+  return (tree) => {
+    const walk = (node) => {
+      if (node.type === 'element' && node.tagName === 'img') {
+        node.properties = node.properties || {};
+        if (node.properties.loading == null) node.properties.loading = 'lazy';
+        if (node.properties.decoding == null) node.properties.decoding = 'async';
+      }
+      if (node.children) node.children.forEach(walk);
+    };
+    walk(tree);
+  };
+}

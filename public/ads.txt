@@ -1,0 +1,4 @@
+# Google AdSense ads.txt
+# After your AdSense account is approved, replace the line below with your real
+# publisher ID, e.g.:
+# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

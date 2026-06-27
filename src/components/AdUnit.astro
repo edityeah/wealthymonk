@@ -1,0 +1,26 @@
+---
+// In-article AdSense unit. Renders nothing until PUBLIC_ADSENSE_CLIENT is set,
+// so the layout is clean pre-approval. Pass a `slot` id once you create ad units
+// in the AdSense dashboard; without one it shows an auto/responsive display ad.
+interface Props { slot?: string; }
+const { slot } = Astro.props;
+const client = import.meta.env.PUBLIC_ADSENSE_CLIENT;
+---
+{client && (
+  <aside class="ad" aria-label="Advertisement">
+    <span class="ad-label">Advertisement</span>
+    <ins
+      class="adsbygoogle"
+      style="display:block"
+      data-ad-client={client}
+      data-ad-slot={slot}
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    ></ins>
+    <script is:inline>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </aside>
+)}
+<style>
+  .ad { max-width: var(--maxw); margin: 2rem auto; text-align: center; min-height: 90px; }
+  .ad-label { display: block; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+</style>

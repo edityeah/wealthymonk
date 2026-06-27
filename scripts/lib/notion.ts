@@ -11,7 +11,9 @@ const NOTION_PAGES_DATABASE_ID = process.env.NOTION_PAGES_DATABASE_ID;
 export const notionConfigured = Boolean(NOTION_TOKEN && NOTION_DATABASE_ID);
 export const pagesConfigured = Boolean(NOTION_TOKEN && NOTION_PAGES_DATABASE_ID);
 
-const client = NOTION_TOKEN ? new Client({ auth: NOTION_TOKEN }) : null;
+// Pass Node's native fetch (undici). The client's bundled node-fetch throws
+// ERR_STREAM_PREMATURE_CLOSE on gzipped responses in CI (GitHub runners).
+const client = NOTION_TOKEN ? new Client({ auth: NOTION_TOKEN, fetch: globalThis.fetch }) : null;
 
 async function backoff<T>(fn: () => Promise<T>, attempt = 0): Promise<T> {
   try {

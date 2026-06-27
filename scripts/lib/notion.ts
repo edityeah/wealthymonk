@@ -31,6 +31,11 @@ async function backoff<T>(fn: () => Promise<T>, attempt = 0): Promise<T> {
   }
 }
 
+/** Public retry wrapper used by the agent pipeline. */
+export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  return backoff(fn);
+}
+
 function plainText(rich: any[] | undefined): string {
   if (!rich) return '';
   return rich.map((r) => r.plain_text ?? '').join('');

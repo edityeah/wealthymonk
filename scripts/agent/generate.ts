@@ -38,7 +38,10 @@ Rules that always apply:
 REQUIRED inline links + images:
 A. ENTITY LINKS (external): hyperlink key proper nouns to official sites — companies → investor-relations/official site, regulators → SEBI/RBI/IRDAI, exchanges → NSE/BSE/NYSE, or Wikipedia for concepts. 4-8 links, natural anchor text, don't repeat the same entity.
 B. INTERNAL BACKLINKS: you'll get a list of existing Wealthy Monk posts; link 1-3 relevant ones inline by slug: [text](/posts/SLUG/). Don't force fits.
-C. INLINE IMAGES: 2-4 placeholders where a visual helps, using EXACTLY: ![alt text](query:concrete photographable subject). The query must name a real, photographable THING (e.g. "Bombay Stock Exchange building", "Indian rupee banknotes and calculator", "stock chart on a laptop", "person reviewing insurance documents"). Never abstract ("market analysis", "financial planning"). First image after the opening 1-2 paragraphs.`;
+C. INLINE IMAGES: 2-4 placeholders where a visual helps, using EXACTLY: ![alt text](query:concrete photographable subject). The query must name a real, photographable THING.
+   - STRONGLY prefer objects, places, charts, screens, documents, buildings, and currency over photos of PEOPLE. Generic people queries ("business team", "office meeting", "people in suits", "financial advisor") return Western stock that looks out of place on an Indian site — avoid them.
+   - When the subject is India-specific, the query MUST be India-anchored — include "India"/"Indian" or a specific Indian city/landmark/symbol. Good: "Bombay Stock Exchange building Mumbai", "Indian rupee banknotes and calculator", "Nifty stock chart on a screen", "RBI Reserve Bank of India building". Bad: "business team", "stock market" (too generic).
+   - Never abstract ("market analysis", "financial planning"). First image after the opening 1-2 paragraphs.`;
 
 const SYSTEM_NEWS = `${VOICE}
 
@@ -68,7 +71,7 @@ const TOOL = {
       },
       tags: { type: 'array', items: { type: 'string' }, description: '3-6 free-form tags (instruments, entities, topic). For news include "TWM News".' },
       body: { type: 'string', description: 'Full body in Markdown. Headings, paragraphs, lists. NO frontmatter, NO H1/title at top, NO disclaimer, NO "Source:" line. Must include entity links, internal backlinks, and inline image placeholders per the system prompt.' },
-      coverQuery: { type: 'string', description: 'Specific Unsplash search query for the cover photo — a concrete subject from the post (e.g. "Bombay Stock Exchange", "gold bitcoin coin", "health insurance documents"). Not abstract.' },
+      coverQuery: { type: 'string', description: 'Specific Unsplash query for the cover — a concrete subject from the post, India-anchored when the topic is India-specific (e.g. "Bombay Stock Exchange building Mumbai", "Indian rupee banknotes", "gold bitcoin coin", "health insurance documents"). Prefer objects/places over generic people. Not abstract.' },
     },
     required: ['title', 'slug', 'excerpt', 'category', 'tags', 'body', 'coverQuery'],
   },

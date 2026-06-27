@@ -1,21 +1,43 @@
 ---
-// Buttondown newsletter signup — renders only when PUBLIC_BUTTONDOWN_USER is set.
-const user = import.meta.env.PUBLIC_BUTTONDOWN_USER;
+// Footer newsletter signup → POST /api/subscribe (Notion + Resend).
+interface Props { source?: string; }
+const { source = 'footer' } = Astro.props;
 ---
-{user && (
-  <form
-    class="newsletter"
-    action={`https://buttondown.com/api/emails/embed-subscribe/${user}`}
-    method="post"
-    target="popupwindow"
-    onsubmit={`window.open('https://buttondown.com/${user}', 'popupwindow')`}
-  >
-    <h4>The Wealthy Monk newsletter</h4>
-    <p style="margin:0 0 0.6rem;font-size:0.88rem;color:#c6d2dd;">Money ideas in your inbox. No spam.</p>
-    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-      <input type="email" name="email" placeholder="you@example.com" required
-        style="flex:1;min-width:180px;padding:0.5rem 0.7rem;border-radius:8px;border:1px solid #ffffff33;background:#ffffff14;color:#fff;" />
-      <button type="submit" class="btn">Subscribe</button>
-    </div>
-  </form>
-)}
+<form class="newsletter" data-source={source}>
+  <h4>The Wealthy Monk newsletter</h4>
+  <p style="margin:0 0 0.6rem;font-size:0.88rem;color:#c6d2dd;">Clear money ideas, one short email a week. No spam.</p>
+  <div class="nl-row">
+    <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address"
+      style="flex:1;min-width:180px;padding:0.5rem 0.7rem;border-radius:8px;border:1px solid #ffffff33;background:#ffffff14;color:#fff;" />
+    <button type="submit" class="btn">Subscribe</button>
+  </div>
+  <input type="text" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true"
+    style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" />
+  <p class="nl-status" aria-live="polite" style="font-size:0.82rem;color:#c6d2dd;min-height:1.1em;margin:0.5rem 0 0;"></p>
+</form>
+<style>.newsletter .nl-row{display:flex;gap:0.5rem;flex-wrap:wrap;}</style>
+<script>
+  document.querySelectorAll<HTMLFormElement>('.newsletter').forEach((form) => {
+    const status = form.querySelector<HTMLParagraphElement>('.nl-status');
+    const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!status || !btn) return;
+      const fd = new FormData(form);
+      const body = { email: String(fd.get('email') ?? ''), hp: String(fd.get('hp') ?? ''), source: form.dataset.source ?? 'site' };
+      btn.disabled = true;
+      status.textContent = 'Subscribing…';
+      status.style.color = '#c6d2dd';
+      try {
+        const r = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const d = await r.json();
+        if (!r.ok) { status.textContent = d?.error ?? 'Could not subscribe.'; status.style.color = '#ffb4a8'; btn.disabled = false; return; }
+        status.textContent = d.already ? 'You’re already subscribed — thanks!' : 'Thanks! Check your inbox for a welcome email.';
+        status.style.color = '#7fe3cf';
+        form.reset();
+      } catch {
+        status.textContent = 'Network error. Try again.'; status.style.color = '#ffb4a8'; btn.disabled = false;
+      }
+    });
+  });
+</script>

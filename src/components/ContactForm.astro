@@ -1,0 +1,52 @@
+---
+// Contact form → POST /api/contact (Notion + optional Resend ack).
+---
+<form class="contact-form" id="contact-form">
+  <label class="field"><span>Your name</span>
+    <input name="name" type="text" required maxlength="100" autocomplete="name" />
+  </label>
+  <label class="field"><span>Email</span>
+    <input name="email" type="email" required maxlength="200" autocomplete="email" />
+  </label>
+  <label class="field"><span>Subject <small>(optional)</small></span>
+    <input name="subject" type="text" maxlength="200" />
+  </label>
+  <label class="field"><span>Message</span>
+    <textarea name="message" required rows="6" maxlength="5000" placeholder="How can we help?"></textarea>
+  </label>
+  <input type="text" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true" class="hp-field" />
+  <div class="form-row">
+    <button type="submit" class="submit">Send message</button>
+    <span class="form-status" aria-live="polite"></span>
+  </div>
+</form>
+<style>
+  .contact-form { max-width: var(--maxw); margin: 1.5rem auto 0; display: grid; gap: 1rem; }
+</style>
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  if (form) {
+    const status = form.querySelector<HTMLSpanElement>('.form-status');
+    const btn = form.querySelector<HTMLButtonElement>('button.submit');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!status || !btn) return;
+      const fd = new FormData(form);
+      const body = {
+        name: String(fd.get('name') ?? ''), email: String(fd.get('email') ?? ''),
+        subject: String(fd.get('subject') ?? ''), message: String(fd.get('message') ?? ''),
+        hp: String(fd.get('hp') ?? ''),
+      };
+      btn.disabled = true; status.textContent = 'Sending…'; status.className = 'form-status';
+      try {
+        const r = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const d = await r.json();
+        if (!r.ok) { status.textContent = d?.error ?? 'Could not send.'; status.className = 'form-status error'; btn.disabled = false; return; }
+        status.textContent = 'Thanks — your message has been sent.'; status.className = 'form-status ok';
+        form.reset();
+      } catch {
+        status.textContent = 'Network error. Try again.'; status.className = 'form-status error'; btn.disabled = false;
+      }
+    });
+  }
+</script>

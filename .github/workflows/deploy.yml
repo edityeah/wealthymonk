@@ -1,0 +1,43 @@
+name: Build and deploy to Cloudflare Pages
+
+on:
+  # Every 30 min — picks up Notion changes (e.g. a post flipped to Published).
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build site (pulls latest from Notion)
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          # PUBLIC_* are inlined at build time by Astro — must be present here.
+          PUBLIC_ADSENSE_CLIENT: ${{ secrets.PUBLIC_ADSENSE_CLIENT }}
+          PUBLIC_CFA_TOKEN: ${{ secrets.PUBLIC_CFA_TOKEN }}
+        run: npm run build
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=wealthy-monk --branch=main --commit-dirty=true

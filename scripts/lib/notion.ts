@@ -17,9 +17,12 @@ async function backoff<T>(fn: () => Promise<T>, attempt = 0): Promise<T> {
   try {
     return await fn();
   } catch (err: any) {
-    const status = err?.status ?? err?.code;
-    const retriable = status === 429 || status === 502 || status === 503 || status === 504;
-    if (!retriable || attempt >= 5) throw err;
+    const status = err?.status;
+    // Retry on rate-limit/5xx HTTP statuses AND transient network errors
+    // (fetch failures like "Premature close" surface with no HTTP status).
+    const httpRetriable = status === 429 || status === 502 || status === 503 || status === 504;
+    const networkError = status === undefined;
+    if ((!httpRetriable && !networkError) || attempt >= 5) throw err;
     const delay = Math.min(1000 * 2 ** attempt, 16000);
     await new Promise((r) => setTimeout(r, delay));
     return backoff(fn, attempt + 1);

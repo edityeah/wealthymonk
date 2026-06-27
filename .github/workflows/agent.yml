@@ -1,12 +1,12 @@
 name: AI blog-drafting agent
 
-# Manual trigger only for now. Once the sample drafts are approved, uncomment
-# the hourly schedule below to produce up to 10 drafts/day (3 evergreen + 7
-# news). The planner caps daily output from Notion state; extra slots no-op.
+# Hourly → up to 24 run-slots/day, one draft each. The planner caps daily
+# output at 10 (3 evergreen + 7 news) from Notion state; extra slots no-op.
+# Hourly gives headroom against GitHub's scheduled-cron delays/skips.
 on:
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch: {}
-  # schedule:
-  #   - cron: '0 * * * *'
 
 concurrency:
   group: agent

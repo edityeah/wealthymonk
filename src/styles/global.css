@@ -45,7 +45,7 @@
 
 /* ── Base ────────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: 90px; }
 body {
   margin: 0;
   background: var(--bg);
@@ -68,6 +68,9 @@ img { max-width: 100%; height: auto; border-radius: var(--radius); }
   background: var(--navy);
   color: #fff;
   border-bottom: 3px solid var(--accent);
+  position: sticky;
+  top: 0;
+  z-index: 40;
 }
 .site-header a { color: #fff; }
 .nav {

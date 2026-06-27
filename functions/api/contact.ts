@@ -35,7 +35,7 @@ function corsHeaders() {
 function json(data: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...corsHeaders() } });
 }
-function cleanText(s: string): string { return s.replace(/[ -]/g, '').trim(); }
+function cleanText(s: string): string { return s.replace(/[\u0000-\u001F\u007F]/g, '').trim(); }
 function isEmail(s: string): boolean { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
 function rt(content: string) { return content ? [{ type: 'text', text: { content: content.slice(0, 2000) } }] : []; }
 function escapeHtml(s: string): string {

@@ -6,7 +6,10 @@ import { CATEGORIES, slugifyTag } from '../lib/categories.ts';
     The Wealthy Monk
     <small>Healthier wallet, happier you!</small>
   </a>
-  <div class="nav-links">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
+    <span class="nav-toggle-bar" aria-hidden="true"></span>
+  </button>
+  <div class="nav-links" id="nav-links">
     <a href="/">Home</a>
     <a href="/invested/">InvestED</a>
     {CATEGORIES.map((c) => (
@@ -21,15 +24,18 @@ import { CATEGORIES, slugifyTag } from '../lib/categories.ts';
   (() => {
     const root = document.documentElement;
     const saved = localStorage.getItem('theme');
-    // Default to light; only go dark if the visitor explicitly chose it.
     root.setAttribute('data-theme', saved || 'light');
-    const btn = document.getElementById('theme-toggle');
-    btn?.addEventListener('click', () => {
+    document.getElementById('theme-toggle')?.addEventListener('click', () => {
       const cur = root.getAttribute('data-theme');
-      const dark = cur ? cur === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-      const next = dark ? 'light' : 'dark';
+      const next = cur === 'dark' ? 'light' : 'dark';
       root.setAttribute('data-theme', next);
       localStorage.setItem('theme', next);
+    });
+    const toggle = document.getElementById('nav-toggle');
+    const links = document.getElementById('nav-links');
+    toggle?.addEventListener('click', () => {
+      const open = links?.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
   })();
 </script>

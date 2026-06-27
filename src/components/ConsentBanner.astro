@@ -1,0 +1,44 @@
+---
+// Cookie-consent banner wired to Google Consent Mode v2. Ads default to
+// non-personalized (consent denied); accepting upgrades to personalized.
+---
+<div class="consent" id="consent-banner" hidden>
+  <p class="consent-text">
+    We use cookies for site features and to show ads. With your consent we also
+    personalise ads and measure traffic. See our
+    <a href="/privacy-policy/">Privacy Policy</a>.
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn-ghost" id="consent-reject">Reject</button>
+    <button type="button" class="btn" id="consent-accept">Accept</button>
+  </div>
+</div>
+<script is:inline>
+  (() => {
+    const banner = document.getElementById('consent-banner');
+    if (!banner) return;
+    function gtag(){ (window.dataLayer = window.dataLayer || []).push(arguments); }
+    let choice = null;
+    try { choice = localStorage.getItem('cookie-consent'); } catch (e) {}
+    if (!choice) banner.hidden = false;
+
+    function set(value) {
+      try { localStorage.setItem('cookie-consent', value); } catch (e) {}
+      const v = value === 'granted' ? 'granted' : 'denied';
+      gtag('consent', 'update', {
+        ad_storage: v, ad_user_data: v, ad_personalization: v, analytics_storage: v,
+      });
+      banner.hidden = true;
+    }
+    document.getElementById('consent-accept')?.addEventListener('click', () => set('granted'));
+    document.getElementById('consent-reject')?.addEventListener('click', () => set('denied'));
+  })();
+</script>
+<style>
+  .consent { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 60; max-width: 720px; margin: 0 auto; background: var(--navy); color: #e7edf3; border: 1px solid #ffffff22; border-radius: var(--radius); box-shadow: var(--shadow); padding: 1rem 1.2rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+  .consent-text { margin: 0; font-size: 0.85rem; flex: 1; min-width: 220px; line-height: 1.5; }
+  .consent-text a { color: var(--accent-700); }
+  .consent-actions { display: flex; gap: 0.5rem; }
+  .consent .btn { background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 0.5rem 1.2rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+  .consent .btn-ghost { background: transparent; color: #cdd8e2; border: 1px solid #ffffff33; border-radius: 999px; padding: 0.5rem 1.1rem; font-size: 0.85rem; cursor: pointer; }
+</style>

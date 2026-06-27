@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import SiteNav from '../components/SiteNav.astro';
 import Newsletter from '../components/Newsletter.astro';
+import ConsentBanner from '../components/ConsentBanner.astro';
 import { getCollection } from 'astro:content';
 import { SITE, pageTitle, canonical, abs, siteSchema } from '../lib/seo.ts';
 
@@ -24,7 +25,7 @@ const {
 const desc = description ?? SITE.description;
 const url = canonical(Astro.url.pathname);
 const fullTitle = pageTitle(title);
-const ogImage = abs(image);
+const ogImage = abs(image) ?? SITE.defaultImage;
 const robots = noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large';
 const schemas = [...siteSchema(), ...jsonLd];
 
@@ -40,6 +41,23 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Google Consent Mode v2 defaults (must run before ad/analytics tags) -->
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      gtag('consent', 'default', {
+        ad_storage: 'denied', ad_user_data: 'denied',
+        ad_personalization: 'denied', analytics_storage: 'denied',
+      });
+      try {
+        if (localStorage.getItem('cookie-consent') === 'granted') {
+          gtag('consent', 'update', {
+            ad_storage: 'granted', ad_user_data: 'granted',
+            ad_personalization: 'granted', analytics_storage: 'granted',
+          });
+        }
+      } catch (e) {}
+    </script>
     <title>{fullTitle}</title>
     <meta name="description" content={desc} />
     <meta name="robots" content={robots} />
@@ -126,6 +144,7 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
         © {new Date().getFullYear()} The Wealthy Monk. For education only — not financial advice.
       </div>
     </footer>
+    <ConsentBanner />
     {cfaToken && (
       <script
         is:inline

@@ -8,6 +8,7 @@ export const SITE = {
   locale: 'en_IN',
   twitter: '@wealthy_monk',
   logo: 'https://wealthymonk.org/favicon.svg',
+  defaultImage: 'https://wealthymonk.org/og-default.png',
   social: {
     facebook: 'https://www.facebook.com/wealthymonk/',
     instagram: 'https://www.instagram.com/',

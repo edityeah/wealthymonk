@@ -186,6 +186,16 @@ img { max-width: 100%; height: auto; border-radius: var(--radius); }
 
 .skip-link { position: absolute; left: -999px; }
 
+/* ── About: team cards ───────────────────────────────────────────────────── */
+.team-grid { max-width: var(--maxw); margin: 1.5rem auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.team-card { display: flex; gap: 1rem; align-items: flex-start; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; box-shadow: var(--shadow); margin: 0; }
+.article-body .team-card img { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin: 0; box-shadow: none; }
+.team-card figcaption { display: flex; flex-direction: column; gap: 0.15rem; }
+.team-card figcaption strong { font-family: var(--serif); font-size: 1.1rem; }
+.team-card .role { color: var(--accent-700); font-size: 0.82rem; font-weight: 600; }
+.team-card figcaption p { margin: 0.35rem 0; font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+.team-card figcaption a { font-size: 0.85rem; }
+
 /* ── Layout with sidebar ─────────────────────────────────────────────────── */
 .with-sidebar { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 2.5rem; align-items: start; }
 @media (max-width: 900px) { .with-sidebar { grid-template-columns: 1fr; } }

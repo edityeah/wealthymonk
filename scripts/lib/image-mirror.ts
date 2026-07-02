@@ -61,9 +61,9 @@ export async function mirrorImage(srcUrl: string, slug: string): Promise<string>
     return srcUrl;
   }
 
-  // Reuse a committed migration image when the filename matches. The old
-  // WordPress /wp-content/ URLs are dead now, but their files were downloaded
-  // to public/img/ during migration — serve those instead of a failed fetch.
+  // Reuse a committed image when the filename matches. Some legacy absolute
+  // image URLs no longer resolve, but their files were downloaded to public/img/
+  // during the one-time import — serve those instead of a failed fetch.
   try {
     const base = decodeURIComponent(u.pathname.split('/').pop() || '');
     if (base && existsSync(join(ROOT, 'public', 'img', base))) {

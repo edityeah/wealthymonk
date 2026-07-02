@@ -182,7 +182,7 @@ export async function publishToNotion(
     Tags: { multi_select: post.tags.map((t) => ({ name: t.replace(/,/g, ' ').slice(0, 100) })) },
     Excerpt: { rich_text: richText(post.excerpt) },
     // Source URL is only for the agent's de-dup tracking. Original URL is
-    // reserved for the WP-migration use case (the actual old WordPress URL).
+    // reserved for the original import (the legacy source URL).
     'Source URL': { url: post.sourceUrl || null },
     ...(meta?.contentType ? { 'Content Type': { select: { name: meta.contentType } } } : {}),
     ...(meta?.topicKey ? { 'Topic Key': { rich_text: [{ type: 'text', text: { content: meta.topicKey } }] } } : {}),

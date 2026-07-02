@@ -8,7 +8,7 @@
  * With no credentials it exits cleanly without touching the filesystem, so the
  * site builds from the committed MDX in src/content/posts/imported/.
  *
- * Note: posts/imported/ (the one-time WordPress migration) and posts/notion/
+ * Note: posts/imported/ (the one-time content import) and posts/notion/
  * (live Notion content) coexist. To move an old post into Notion, recreate it
  * there and delete its file from posts/imported/ to avoid a duplicate slug.
  */

@@ -4,7 +4,7 @@ import { fetchBlocks } from './notion.js';
 import { mirrorImage } from './image-mirror.js';
 
 // ── Internal-link rewriting ──────────────────────────────────────────────────
-// Posts migrated from WordPress carry legacy internal links in WP permalink
+// Imported posts carry legacy internal links in an old permalink
 // form: https://geo-traveller.com/<slug>/ or /<slug>/ — but every post now
 // lives under /posts/<slug>/. Build-content seeds this set with all known post
 // slugs so renderRich() can rewrite those links to the correct path.
@@ -25,7 +25,7 @@ function slugToLabel(slug: string): string {
 
 /**
  * Convert bare in-text URLs to this site's legacy permalinks into proper
- * markdown links. WordPress posts often contain a bare line like
+ * markdown links. Imported posts often contain a bare line like
  * "Also read: https://geo-traveller.com/<slug>/" — left as plain text, the
  * MDX auto-linker turns it into an <a> pointing at the dead root-level URL.
  * Here we replace known-post URLs with [Title](/posts/<slug>/). External and
@@ -92,7 +92,7 @@ function escapeMdx(s: string): string {
 
 /**
  * Make a raw HTML fragment (e.g. a preserved table) safe to embed in MDX.
- * WordPress table markup is frequently malformed (unclosed <td>/<tr>), which
+ * Legacy table markup is frequently malformed (unclosed <td>/<tr>), which
  * MDX's strict JSX parser rejects — so we re-serialize through cheerio to
  * balance tags, then self-close void elements and escape braces.
  */
@@ -314,7 +314,7 @@ function escapeAttr(s: string): string {
  */
 export function renderEmbed(rawUrl: string): string {
   // Correct legacy internal links first. A bookmark/embed block pointing at
-  // another post on this site (common after the WP migration) is rewritten to
+  // another post on this site (common after the import) is rewritten to
   // /posts/<slug>/ and rendered as a clean inline link rather than a link card
   // showing a raw URL — which also avoids the auto-linked nested <a> bug.
   const url = rewriteHref(rawUrl) || rawUrl;

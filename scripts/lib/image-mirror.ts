@@ -1,4 +1,5 @@
 import { mkdir, writeFile, access } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, extname } from 'node:path';
 
@@ -59,6 +60,18 @@ export async function mirrorImage(srcUrl: string, slug: string): Promise<string>
     cache.set(cacheKey, srcUrl);
     return srcUrl;
   }
+
+  // Reuse a committed migration image when the filename matches. The old
+  // WordPress /wp-content/ URLs are dead now, but their files were downloaded
+  // to public/img/ during migration — serve those instead of a failed fetch.
+  try {
+    const base = decodeURIComponent(u.pathname.split('/').pop() || '');
+    if (base && existsSync(join(ROOT, 'public', 'img', base))) {
+      const p = `/img/${base}`;
+      cache.set(cacheKey, p);
+      return p;
+    }
+  } catch { /* fall through to normal mirroring */ }
 
   const hash = createHash('sha1').update(`${u.origin}${u.pathname}`).digest('hex').slice(0, 16);
   let ext = extFromUrl(srcUrl);

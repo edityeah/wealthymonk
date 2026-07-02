@@ -189,12 +189,18 @@ async function renderBlock(
   switch (b.type) {
     case 'paragraph':
       return renderRich(b.paragraph.rich_text as RichText[]);
-    case 'heading_1':
-      return `## ${renderRich(b.heading_1.rich_text as RichText[])}`;
-    case 'heading_2':
-      return `### ${renderRich(b.heading_2.rich_text as RichText[])}`;
-    case 'heading_3':
-      return `#### ${renderRich(b.heading_3.rich_text as RichText[])}`;
+    case 'heading_1': {
+      const t = renderRich(b.heading_1.rich_text as RichText[]);
+      return t.trim() ? `## ${t}` : null;
+    }
+    case 'heading_2': {
+      const t = renderRich(b.heading_2.rich_text as RichText[]);
+      return t.trim() ? `### ${t}` : null;
+    }
+    case 'heading_3': {
+      const t = renderRich(b.heading_3.rich_text as RichText[]);
+      return t.trim() ? `#### ${t}` : null;
+    }
     case 'bulleted_list_item':
     case 'numbered_list_item': {
       const data = (b as any)[b.type];

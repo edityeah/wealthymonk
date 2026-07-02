@@ -35,7 +35,7 @@ const rt = readingTime(post.body ?? '');
 const date = post.data.publishDate.toLocaleDateString('en-IN', {
   year: 'numeric', month: 'long', day: 'numeric',
 });
-const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const toc = headings.filter((h) => (h.depth === 2 || h.depth === 3) && h.text.trim());
 
 const url = canonical(`/posts/${slug}/`);
 const published = post.data.publishDate.toISOString();

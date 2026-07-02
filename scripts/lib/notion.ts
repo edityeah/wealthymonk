@@ -135,3 +135,33 @@ export function extractProps(page: PageObjectResponse): PostProps {
     originalDate,
   };
 }
+
+// ── Pages (site pages authored in the Notion "Pages" database) ───────────────
+export async function fetchPublishedPages(): Promise<PageObjectResponse[]> {
+  if (!client || !NOTION_PAGES_DATABASE_ID) return [];
+  const out: PageObjectResponse[] = [];
+  let cursor: string | undefined;
+  do {
+    const res = await backoff(() =>
+      client.databases.query({
+        database_id: NOTION_PAGES_DATABASE_ID,
+        start_cursor: cursor,
+        page_size: 100,
+        filter: { property: 'Status', select: { equals: 'Published' } },
+      }),
+    );
+    for (const p of res.results) if (isFullPage(p)) out.push(p);
+    cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
+  } while (cursor);
+  return out;
+}
+
+export type PageProps = { id: string; title: string; slug: string; description?: string; showInFooter: boolean };
+export function extractPageProps(page: PageObjectResponse): PageProps {
+  const p = page.properties as Record<string, any>;
+  const title = plainText(p.Name?.title ?? p.Title?.title);
+  const slug = (plainText(p.Slug?.rich_text) || slugify(title)).toLowerCase();
+  const description = plainText(p.Description?.rich_text) || undefined;
+  const showInFooter = Boolean(p['Show in footer']?.checkbox);
+  return { id: page.id, title, slug, description, showInFooter };
+}

@@ -8,3 +8,4 @@ dist/
 src/content/posts/notion/
 public/img/generated/
 .DS_Store
+src/content/pages/

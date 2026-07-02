@@ -1,0 +1,41 @@
+---
+// About-page team section. Photos live in public/img/ (swapped in code).
+const team = [
+  {
+    name: 'Aditya Chaudhari', role: 'Founding Editor & CEO', img: '/img/IIT-Guwahati-meme.png',
+    bio: 'A fintech product and education consultant with 6+ years in finance education, focused on improving financial literacy for Indian consumers, with peer-reviewed research to his name.',
+    linkedin: 'https://www.linkedin.com/in/adityacbcc/',
+  },
+  {
+    name: 'Pratham Bhalla', role: 'Chief Product Officer', img: '/img/Pratham-Bhalla.jpeg',
+    bio: "A versatile professional across data analysis, web development, and innovation who brings adaptability and a passion for continuous learning to The Wealthy Monk's product.",
+    linkedin: 'https://www.linkedin.com/in/pratham-bhalla/',
+  },
+  {
+    name: 'Dhiraj Kadam', role: 'Senior Editor', img: '/img/Dhiraj-Kadam.jpeg',
+    bio: 'A finance-operations expert, entrepreneur, and lifelong learner with 5+ years in finance education, and a strong advocate for financial literacy in public education.',
+    linkedin: 'https://www.linkedin.com/in/dhiraj-kadam/',
+  },
+  {
+    name: 'Atullya Srivastava', role: 'Senior Editor', img: '/img/WhatsApp-Image-2024-10-26-at-11.43.48-AM-e1729923500153.jpeg',
+    bio: 'A finance legal specialist and educator who has spent over a decade building training programs for financial professionals — investors, traders, and compliance teams alike.',
+    linkedin: 'https://www.linkedin.com/in/atullya-narayan-srivastava-679994292/',
+  },
+];
+---
+<section class="prose" style="padding-top:0.5rem;">
+  <h2>Meet the team</h2>
+  <div class="team-grid">
+    {team.map((m) => (
+      <figure class="team-card">
+        <img src={m.img} alt={m.name} width="88" height="88" loading="lazy" decoding="async" />
+        <figcaption>
+          <strong>{m.name}</strong>
+          <span class="role">{m.role}</span>
+          <p>{m.bio}</p>
+          <a href={m.linkedin} rel="noopener">LinkedIn →</a>
+        </figcaption>
+      </figure>
+    ))}
+  </div>
+</section>

@@ -161,20 +161,56 @@ async function renderBlocks(
   };
 
   for (const b of blocks) {
-    const rendered = await renderBlock(b, slug, depth, ctx);
-    if (rendered === null) continue;
-
     if (b.type === 'bulleted_list_item' || b.type === 'numbered_list_item') {
+      const data = (b as any)[b.type];
+      const ownText = renderRich(data.rich_text as RichText[]).trim();
+
+      // Import artifact: an empty list item that merely wraps its children as a
+      // list (WordPress → Notion sometimes produced this). Rendering it as-is
+      // yields a phantom "1." / "-" marker and bumps the numbering. Promote the
+      // children to this level; if the empty item has no children at all, drop it.
+      if (!ownText) {
+        if (!b.has_children) continue; // stray empty item — drop
+        const children = await fetchBlocks(b.id);
+        const allSameListKind =
+          children.length > 0 &&
+          children.every((c) => c.type === children[0].type) &&
+          (children[0].type === 'bulleted_list_item' ||
+            children[0].type === 'numbered_list_item');
+        if (allSameListKind) {
+          const childKind = children[0].type === 'bulleted_list_item' ? 'ul' : 'ol';
+          if (!listBuf || listBuf.type !== childKind) {
+            flushList();
+            listBuf = { type: childKind, items: [] };
+          }
+          for (const c of children) {
+            const r = await renderBlock(c, slug, depth, ctx);
+            if (r !== null) listBuf.items.push(r);
+          }
+          continue;
+        }
+        // Empty item wrapping non-list content — render the children as blocks.
+        flushList();
+        const sub = await renderBlocks(children, slug, depth, ctx);
+        if (sub) out.push(sub);
+        continue;
+      }
+
+      const rendered = await renderBlock(b, slug, depth, ctx);
+      if (rendered === null) continue;
       const kind = b.type === 'bulleted_list_item' ? 'ul' : 'ol';
       if (!listBuf || listBuf.type !== kind) {
         flushList();
         listBuf = { type: kind, items: [] };
       }
       listBuf.items.push(rendered);
-    } else {
-      flushList();
-      out.push(rendered);
+      continue;
     }
+
+    const rendered = await renderBlock(b, slug, depth, ctx);
+    if (rendered === null) continue;
+    flushList();
+    out.push(rendered);
   }
   flushList();
   return out.filter(Boolean).join('\n\n');

@@ -88,9 +88,9 @@ const { slug } = Astro.props;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
-        const d = await r.json();
+        const d = await r.json().catch(() => ({}));
         if (!r.ok) {
-          status.textContent = d?.error ?? 'Could not post.';
+          status.textContent = d?.error ?? 'Could not post right now. Please try again later.';
           status.className = 'form-status error';
           submit.disabled = false;
           return;

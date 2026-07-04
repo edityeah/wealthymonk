@@ -30,8 +30,8 @@ const { source = 'footer' } = Astro.props;
       status.style.color = '#c6d2dd';
       try {
         const r = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        const d = await r.json();
-        if (!r.ok) { status.textContent = d?.error ?? 'Could not subscribe.'; status.style.color = '#ffb4a8'; btn.disabled = false; return; }
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { status.textContent = d?.error ?? 'Could not subscribe right now. Please try again later.'; status.style.color = '#ffb4a8'; btn.disabled = false; return; }
         status.textContent = d.already ? 'You’re already subscribed — thanks!' : 'Thanks! Check your inbox for a welcome email.';
         status.style.color = '#7fe3cf';
         form.reset();

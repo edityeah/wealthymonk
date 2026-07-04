@@ -40,8 +40,8 @@
       btn.disabled = true; status.textContent = 'Sending…'; status.className = 'form-status';
       try {
         const r = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        const d = await r.json();
-        if (!r.ok) { status.textContent = d?.error ?? 'Could not send.'; status.className = 'form-status error'; btn.disabled = false; return; }
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { status.textContent = d?.error ?? 'Could not send right now. Please try again later.'; status.className = 'form-status error'; btn.disabled = false; return; }
         status.textContent = 'Thanks — your message has been sent.'; status.className = 'form-status ok';
         form.reset();
       } catch {

@@ -16,6 +16,12 @@ const GONE_PATHS: RegExp[] = [
   /^\/author\//i,
   /^\/comments\/feed/i,
   /^\/\d{4}\/\d{2}\/?$/i,  // date archives like /2024/11/
+  // Spam injected into the old hacked WordPress site, mass-crawled by Google
+  // (e.g. /shopping/935119403756, /store/precary/russophobist62213254298.html).
+  // The new static site has no such paths — 410 them so they de-index faster.
+  /^\/shopping\//i,
+  /^\/store\//i,
+  /\.html$/i,             // this site serves trailing-slash URLs, never .html
 ];
 const GONE_QUERY = ['p', 'page_id', 'cat', 'attachment_id', 'replytocom'];
 

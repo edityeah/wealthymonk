@@ -174,14 +174,15 @@ export async function selectWithVision(
 
   const count = encoded.length;
   const instruction = opts.mode === 'cover'
-    ? // Covers: strict + scenic. The hero image must be relevant and attractive.
-      `These are candidate COVER photos for a travel article: "${subject}".\n\n` +
-      `Pick the ONE that makes the best hero image — prefer an iconic, attractive landmark, ` +
-      `skyline, cityscape, flag, or clearly-relevant scene for the destination/topic.\n` +
+    ? // Covers: strict + attractive. The hero image must be relevant and clean.
+      `These are candidate COVER photos for a finance/markets article: "${subject}".\n\n` +
+      `Pick the ONE that makes the best hero image — prefer a clean, attractive, on-topic ` +
+      `scene: a stock exchange building, trading floor, market ticker/screen, skyline, currency, ` +
+      `or other clearly-relevant finance subject that matches the article's market/geography.\n` +
       `REJECT (never pick) any image that:\n` +
-      `- shows a DIFFERENT country, city, flag, or landmark than the subject (e.g. a US embassy for a Japan article);\n` +
-      `- shows government officials, politicians, ceremonies, handshakes, or press/news scenes;\n` +
-      `- is a close-up of paperwork, a postage stamp, a book/text page, a document scan, a screenshot, a logo, a map, a chart;\n` +
+      `- shows a DIFFERENT country's landmark/flag/currency than the article's market (e.g. Wall Street for an Indian-market brief);\n` +
+      `- shows politicians, ceremonies, handshakes, or press-conference scenes;\n` +
+      `- is a close-up of paperwork, a book/text page, a document scan, a screenshot, a logo, a map;\n` +
       `- is dated/historical, watermarked, blurry, or low quality.\n` +
       `Reply with ONLY the number (1-${count}). If none are great, reply with the single best available number.`
     : // Inline: lenient. A clean, on-topic generic photo is fine.
@@ -243,13 +244,25 @@ async function toBase64Image(url: string): Promise<{ media_type: string; data: s
 // ── public resolvers ─────────────────────────────────────────────────────────
 
 export interface CoverOpts {
-  type: 'evergreen' | 'news';
+  type: 'evergreen' | 'news' | 'brief';
   title?: string;             // post title, for vision context
   imageEntity?: string;       // evergreen: Wikipedia/Wikimedia subject
   unsplashQuery: string;      // model-supplied specific query
   fallbackQueries?: string[];
   candidateImageUrl?: string; // news: RSS image
   candidateUrl?: string;      // news: article for OG scrape
+  avoid?: Set<string>;        // cover URLs to NOT reuse (recent posts)
+  stockOnly?: boolean;        // ignore source/OG image; use clean stock only
+}
+
+/** Fisher-Yates shuffle (plain Node script — Math.random is fine here). */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 /**
@@ -259,7 +272,9 @@ export interface CoverOpts {
  */
 export async function resolveCover(o: CoverOpts): Promise<{ url?: string; source: string }> {
   // News: the article's own image is almost always the right, authentic cover.
-  if (o.type === 'news') {
+  // A daily brief synthesizes many sources, so it uses clean stock instead
+  // (stockOnly) — one article's photo would misrepresent a multi-story brief.
+  if (o.type === 'news' && !o.stockOnly) {
     if (o.candidateImageUrl && (await imageLoads(o.candidateImageUrl))) {
       return { url: o.candidateImageUrl, source: 'rss-image' };
     }
@@ -274,13 +289,21 @@ export async function resolveCover(o: CoverOpts): Promise<{ url?: string; source
   // and wrong-entity results (e.g. a US embassy for a Japan visa guide).
   const queries = [o.unsplashQuery, ...(o.fallbackQueries ?? [])]
     .map((q) => (q ?? '').trim()).filter(Boolean);
-  const primary = queries[0] ?? 'travel photography';
-  const candidates: Candidate[] = [];
+  const primary = queries[0] ?? 'stock market';
+  let candidates: Candidate[] = [];
   for (const q of queries.slice(0, 4)) {
-    candidates.push(...(await unsplashCandidates(q, 3)));
+    candidates.push(...(await unsplashCandidates(q, 4)));
   }
   candidates.push(...(await pexelsCandidates(primary, 3)));
   if (queries[1]) candidates.push(...(await pexelsCandidates(queries[1], 2)));
+
+  // Avoid reusing a cover from a recent post (prevents "every brief has the same
+  // Bombay Stock Exchange photo"). Only fall back to used ones if nothing else.
+  if (o.avoid?.size) {
+    const fresh = candidates.filter((c) => !o.avoid!.has(c.full) && !o.avoid!.has(c.thumb));
+    if (fresh.length) candidates = fresh;
+  }
+  candidates = shuffle(candidates);
 
   const subject = o.title ? `"${o.title}"` : primary;
   // Cover should always end up with something clean — fall back to first candidate.

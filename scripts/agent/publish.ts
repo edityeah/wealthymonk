@@ -209,6 +209,27 @@ export async function publishToNotion(
   return { pageId: page.id, url: (page as any).url ?? '' };
 }
 
+/** Cover image URLs used by recent posts, so new covers can avoid repeating them. */
+export async function recentCoverUrls(limit = 40): Promise<Set<string>> {
+  const set = new Set<string>();
+  try {
+    const res = await withRetry(() => notion.databases.query({
+      database_id: NOTION_DATABASE_ID,
+      sorts: [{ property: 'Publish Date', direction: 'descending' }],
+      page_size: Math.min(limit, 100),
+    }));
+    for (const p of res.results) {
+      if (!isFullPage(p)) continue;
+      const files = (p.properties as any).Cover?.files ?? [];
+      for (const f of files) {
+        const u = f?.external?.url ?? f?.file?.url;
+        if (u) set.add(u);
+      }
+    }
+  } catch { /* best effort — variety only */ }
+  return set;
+}
+
 export async function existingSourceUrls(): Promise<Set<string>> {
   const set = new Set<string>();
   let cursor: string | undefined;

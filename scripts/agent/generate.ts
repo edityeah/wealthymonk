@@ -6,7 +6,7 @@
  * must NOT add its own.
  */
 import Anthropic from '@anthropic-ai/sdk';
-import type { Candidate } from './discover.js';
+import type { Candidate, Region } from './discover.js';
 import type { SeedTopic } from './topics.js';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!;
@@ -140,6 +140,77 @@ ${postList}
 Write the post. Use the publish_post tool.`;
   const input = await callTool(SYSTEM_NEWS, userPrompt, 4000);
   return { ...input, sourceUrl: candidate.url, sourceName: candidate.source };
+}
+
+// ── Daily market brief ("Day Starter" style) ────────────────────────────────
+
+const REGION_CFG: Record<Region, { label: string; category: Category; indices: string; geo: string; tag: string }> = {
+  india: {
+    label: 'Indian',
+    category: 'Indian Markets',
+    indices: 'Nifty 50, Sensex, Bank Nifty',
+    geo: 'India-anchored ("Bombay Stock Exchange building Mumbai", "Indian rupee banknotes", "RBI Reserve Bank of India building", "Dalal Street Mumbai")',
+    tag: 'Indian Markets',
+  },
+  us: {
+    label: 'US',
+    category: 'US Markets',
+    indices: 'S&P 500, Dow Jones, Nasdaq',
+    geo: 'US-anchored ("New York Stock Exchange Wall Street", "Nasdaq market screen Times Square", "US dollar bills", "Federal Reserve building Washington")',
+    tag: 'US Markets',
+  },
+};
+
+function dayStarterSystem(region: Region): string {
+  const c = REGION_CFG[region];
+  return `${VOICE}
+
+This is a DAILY MARKET BRIEF for the ${c.label} market, in the style of a morning "Day Starter" roundup. You are given several fresh news items published today. Weave them into ONE cohesive, readable brief a busy investor can skim over coffee. Structure:
+
+1. Opening (2-3 sentences): the day's overall market direction and the ONE biggest driver. Name the date naturally.
+2. "## What moved" — key index moves and the standout sectors/stocks. Reference ${c.indices} where relevant.
+3. "## Why it moved" (or similar) — the drivers: macro data, global cues, earnings, policy, flows.
+4. "## What to watch" — upcoming triggers/events that the sources mention or clearly imply.
+
+HARD ACCURACY RULE: Use ONLY specific numbers (index levels, percentages, prices) that appear in the provided sources. If an exact figure is not in the sources, describe the move qualitatively ("IT stocks led the gains", "banks were under pressure") — DO NOT invent index levels, closing values, or percentages. Never fabricate quotes.
+
+Length: 500-800 words. Focus on what is genuinely trending and worth reading — skip filler stories. Inline image geography MUST be ${c.geo}.
+
+Output via the publish_post tool. Set category to "${c.category}".`;
+}
+
+/** A daily market brief for one region, synthesized from the day's top stories. */
+export async function generateDailyBrief(
+  region: Region,
+  candidates: Candidate[],
+  existing: ExistingPost[] = [],
+  dateLabel?: string,
+): Promise<GeneratedPost> {
+  const c = REGION_CFG[region];
+  const top = candidates.slice(0, 8);
+  const sources = top
+    .map((s, i) => `${i + 1}. ${s.title}\n   Source: ${s.source} — ${s.url}\n   ${s.summary || '(no summary)'}`)
+    .join('\n\n');
+  const topicText = top.map((s) => s.title).join(' ');
+  const postList = rankExisting(existing, topicText);
+  const userPrompt = `Write today's ${c.label}-market Day Starter brief${dateLabel ? ` for ${dateLabel}` : ''}.
+
+Today's ${c.label}-market news items to synthesize (use these as your factual basis; lead with whatever is genuinely the biggest story):
+
+${sources}
+
+Existing Wealthy Monk posts you can backlink to inline when relevant (use the slug):
+
+${postList}
+
+Use the publish_post tool. Set category to "${c.category}". Include "TWM News" in tags.`;
+  const input = await callTool(dayStarterSystem(region), userPrompt, 4000);
+  return {
+    ...input,
+    category: c.category, // force — never let the model drift the region
+    sourceUrl: top[0]?.url ?? '',
+    sourceName: top[0]?.source ?? '',
+  };
 }
 
 export async function generateEvergreen(topic: SeedTopic, existing: ExistingPost[] = []): Promise<GeneratedPost> {

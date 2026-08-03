@@ -1,8 +1,9 @@
 name: AI blog-drafting agent
 
-# Hourly → up to 24 run-slots/day, one draft each. The planner caps daily
-# output at 10 (3 evergreen + 7 news) from Notion state; extra slots no-op.
-# Hourly gives headroom against GitHub's scheduled-cron delays/skips.
+# Two market "Day Starter" briefs per day — one Indian Markets, one US Markets —
+# drafted into Notion (never auto-published). The run is idempotent: it produces
+# only the region(s) not yet drafted today, so hourly slots fill any gap then
+# no-op. Hourly gives headroom against GitHub's scheduled-cron delays/skips.
 on:
   schedule:
     - cron: '0 * * * *'
@@ -30,6 +31,4 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
-          AGENT_EVERGREEN_PER_DAY: '3'
-          AGENT_NEWS_PER_DAY: '7'
         run: npm run agent

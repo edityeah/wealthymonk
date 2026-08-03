@@ -7,7 +7,16 @@ name: AI blog-drafting agent
 on:
   schedule:
     - cron: '0 * * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Regenerate even if today already has reports'
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Generate but do not write to Notion'
+        type: boolean
+        default: false
 
 concurrency:
   group: agent
@@ -31,4 +40,6 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          AGENT_FORCE: ${{ inputs.force && '1' || '' }}
+          AGENT_DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
         run: npm run agent

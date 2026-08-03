@@ -21,6 +21,7 @@ import { withRetry } from '../lib/notion.js';
 import { runQa } from './qa.js';
 
 const DRY = !!process.env.AGENT_DRY_RUN;
+const FORCE = !!process.env.AGENT_FORCE; // ignore the once-per-day guard (manual test)
 const CONTENT_TYPE = 'Market Report';
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN!, fetch: globalThis.fetch });
@@ -150,8 +151,8 @@ async function makeReport(
 async function main() {
   const posts = await loadPosts();
   const done = reportsDoneToday(posts);
-  const todo = REGIONS.filter((r) => !done.has(r.category));
-  console.log(`[agent] reports done today: [${[...done].join(', ') || 'none'}] — to produce: [${todo.map((t) => t.category).join(', ') || 'none'}]`);
+  const todo = FORCE ? REGIONS : REGIONS.filter((r) => !done.has(r.category));
+  console.log(`[agent] reports done today: [${[...done].join(', ') || 'none'}]${FORCE ? ' (FORCE: regenerating anyway)' : ''} — to produce: [${todo.map((t) => t.category).join(', ') || 'none'}]`);
   if (!todo.length) { console.log('[agent] both reports already drafted today — nothing to do.'); return; }
 
   const buckets = await discoverByRegion();

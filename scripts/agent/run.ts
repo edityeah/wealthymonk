@@ -95,18 +95,22 @@ function reportsDoneToday(posts: Awaited<ReturnType<typeof loadPosts>>): Set<str
 /** Assemble the full report body: prose sections interleaved with data blocks. */
 function assembleBody(sections: Awaited<ReturnType<typeof generateTerminalReport>>, data: Parameters<typeof marketSnapshot>[0], region: Region): string {
   resetExhibits();
+  // Each prose field sits UNDER a "## <section>" heading we add, so demote any
+  // H1/H2 the model emitted inside it to H3 — avoids doubled top-level headings
+  // and keeps the table-of-contents hierarchy clean.
+  const sub = (s?: string) => (s ?? '').trim().replace(/^#{1,2} /gm, '### ');
   const parts: (string | undefined)[] = [
     sections.leadSummary?.trim(),
     sections.keyInsights?.length ? '## Key Insights\n\n' + sections.keyInsights.map((b) => `- ${b}`).join('\n') : undefined,
     marketSnapshot(data),
-    '## Market Analysis\n\n' + (sections.marketAnalysis?.trim() ?? ''),
+    '## Market Analysis\n\n' + sub(sections.marketAnalysis),
     '## Market Data\n\n' + marketDataSections(data, region),
-    '## Macro View\n\n' + (sections.macroView?.trim() ?? ''),
-    '## Corporate Earnings\n\n' + (sections.earnings?.trim() ?? ''),
-    '## Deals & Corporate Actions\n\n' + (sections.deals?.trim() ?? ''),
-    '## Global Pulse\n\n' + (sections.globalPulse?.trim() ?? ''),
+    '## Macro View\n\n' + sub(sections.macroView),
+    '## Corporate Earnings\n\n' + sub(sections.earnings),
+    '## Deals & Corporate Actions\n\n' + sub(sections.deals),
+    '## Global Pulse\n\n' + sub(sections.globalPulse),
     sections.whatToWatch?.length ? '## What to Watch\n\n' + sections.whatToWatch.map((b) => `- ${b}`).join('\n') : undefined,
-    sections.featureTitle ? `## Feature: ${sections.featureTitle}\n\n` + (sections.featureBody?.trim() ?? '') : undefined,
+    sections.featureTitle ? `## Feature: ${sections.featureTitle}\n\n` + sub(sections.featureBody) : undefined,
   ];
   return parts.filter(Boolean).join('\n\n');
 }

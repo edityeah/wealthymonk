@@ -27,10 +27,12 @@ export async function runQa(p: QaInput): Promise<QaResult> {
     try {
       const out = await textCall({
         system:
-          'You are a publishing QA reviewer. Given a draft title and body, reply with a single line: ' +
-          'either "OK" if it is internally consistent, on-topic, and free of obvious factual contradictions, ' +
-          'or "FLAG: <short reason>" if not. Be terse.',
-        user: `TITLE: ${p.title}\n\nBODY:\n${p.body.slice(0, 8000)}`,
+          'You are a publishing QA reviewer. You are shown a draft TITLE and only the FIRST PART of a long body — ' +
+          'an excerpt that WILL cut off mid-sentence, mid-table, or mid-chart. That truncation is expected and is NOT a problem. ' +
+          'Reply with a single line: "OK" unless there is a genuine issue in what you can actually see — an internal factual ' +
+          'contradiction, clearly off-topic content, or a title that plainly mismatches the body. ' +
+          'Do NOT flag truncation, incompleteness, or the excerpt ending abruptly. Otherwise reply "FLAG: <short reason>". Be terse.',
+        user: `TITLE: ${p.title}\n\nBODY EXCERPT (truncated on purpose):\n${p.body.slice(0, 8000)}`,
         maxTokens: 1000,
       });
       const line = (out ?? '').trim();

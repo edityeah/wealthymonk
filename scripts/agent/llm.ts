@@ -21,7 +21,11 @@ export const MODELS = {
   vision: process.env.AGENT_VISION_MODEL ?? 'gpt-5.6-terra',
 };
 
-const REASONING = process.env.AGENT_REASONING_EFFORT; // 'minimal'|'low'|'medium'|'high' or unset
+// GPT-5.6 defaults to extended reasoning, but Chat-Completions function tools
+// require reasoning_effort:'none'. Our tasks (writing grounded in data we already
+// supply, plus pick-a-number vision/QA) don't need reasoning, so 'none' is both
+// required and appropriate. Override via env if ever needed.
+const REASONING = process.env.AGENT_REASONING_EFFORT ?? 'none';
 
 export function hasKey(): boolean {
   return !!process.env.OPENAI_API_KEY;
@@ -34,9 +38,7 @@ function client(): OpenAI {
 }
 
 function base(model: string, maxTokens: number): Record<string, unknown> {
-  const p: Record<string, unknown> = { model, max_completion_tokens: maxTokens };
-  if (REASONING) p.reasoning_effort = REASONING;
-  return p;
+  return { model, max_completion_tokens: maxTokens, reasoning_effort: REASONING };
 }
 
 type FnTool = { name: string; description: string; parameters: any };

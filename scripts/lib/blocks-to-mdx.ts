@@ -258,6 +258,13 @@ async function renderBlock(
       if (lang === 'html' && /<table/i.test(src) && !/<script/i.test(src)) {
         return mdxSafeHtml(src);
       }
+      // SVG chart exhibit (from the market-report agent). Embed as a data-URI
+      // image — opaque to the MDX/hast parser, so the SVG's case-sensitive
+      // attributes (viewBox etc.) survive intact and it always renders.
+      if (lang === 'html' && /<svg/i.test(src) && !/<script/i.test(src)) {
+        const b64 = Buffer.from(src, 'utf8').toString('base64');
+        return `<img src="data:image/svg+xml;base64,${b64}" alt="Market data chart" loading="lazy" />`;
+      }
       return '```' + lang + '\n' + src + '\n```';
     }
     case 'image': {

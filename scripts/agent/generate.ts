@@ -109,18 +109,22 @@ function rankExisting(existing: ExistingPost[], topicText: string): string {
 }
 
 async function callTool(system: string, userPrompt: string, maxTokens: number) {
+  return callToolWith(TOOL, system, userPrompt, maxTokens) as Promise<Omit<GeneratedPost, 'sourceUrl' | 'sourceName'>>;
+}
+
+async function callToolWith(tool: any, system: string, userPrompt: string, maxTokens: number): Promise<any> {
   const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
   const res = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
     system,
-    tools: [TOOL as any],
-    tool_choice: { type: 'tool', name: 'publish_post' },
+    tools: [tool],
+    tool_choice: { type: 'tool', name: tool.name },
     messages: [{ role: 'user', content: userPrompt }],
   });
   const toolUse = res.content.find((c: any) => c.type === 'tool_use');
   if (!toolUse || toolUse.type !== 'tool_use') throw new Error('Claude did not return a tool_use block');
-  return toolUse.input as Omit<GeneratedPost, 'sourceUrl' | 'sourceName'>;
+  return toolUse.input;
 }
 
 export async function generatePost(candidate: Candidate, existing: ExistingPost[] = []): Promise<GeneratedPost> {
@@ -211,6 +215,99 @@ Use the publish_post tool. Set category to "${c.category}". Include "TWM News" i
     sourceUrl: top[0]?.url ?? '',
     sourceName: top[0]?.source ?? '',
   };
+}
+
+// ── Full daily market terminal report ───────────────────────────────────────
+
+export interface ReportSections {
+  title: string;
+  slug: string;
+  excerpt: string;
+  coverQuery: string;
+  leadSummary: string;
+  keyInsights: string[];
+  marketAnalysis: string;
+  macroView: string;
+  earnings: string;
+  deals: string;
+  globalPulse: string;
+  whatToWatch: string[];
+  featureTitle: string;
+  featureBody: string;
+  tags: string[];
+}
+
+const REPORT_TOOL = {
+  name: 'publish_report',
+  description: 'Save the structured daily market report',
+  input_schema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'Descriptive headline naming the market and the day\'s main move, e.g. "Indian Market Report: Nifty Climbs 1% as Autos and Financials Lead". 8-16 words.' },
+      slug: { type: 'string', description: 'URL slug, lowercase hyphenated, includes the date, e.g. "indian-market-report-august-3-2026".', pattern: '^[a-z0-9-]+$' },
+      excerpt: { type: 'string', description: 'One-sentence summary of the day. 130-180 characters.' },
+      coverQuery: { type: 'string', description: 'Concrete Unsplash cover query with region-matching geography (India-anchored for Indian report, US-anchored for US). Objects/places over people. Not abstract.' },
+      leadSummary: { type: 'string', description: 'Opening 2-3 paragraph synthesis of the session: overall direction, the biggest driver, leading/lagging sectors, and a forward hook. Markdown. Reference the real index numbers from the data.' },
+      keyInsights: { type: 'array', items: { type: 'string' }, description: '5-7 punchy bullet insights, each a concrete takeaway with a figure where possible.' },
+      marketAnalysis: { type: 'string', description: 'The "what moved and why" analysis (~500-800 words). Use ### subsections. Explain the index/sector/stock moves using the EXACT numbers in the data digest, and the drivers (macro, global cues, earnings, flows). Define any jargon.' },
+      macroView: { type: 'string', description: 'Macro & economy section (~600-1000 words) with ### subsections (growth/industrial activity, inflation/rates, policy/regulation, public finance) built from the provided news. Only use facts present in the news items.' },
+      earnings: { type: 'string', description: 'Corporate earnings section (~600-1200 words). A ### subsection per major company in the news reporting results, covering profit/revenue/margin and context. Only companies and figures present in the news.' },
+      deals: { type: 'string', description: 'Deals, M&A and corporate actions (~300-700 words) drawn from the news — acquisitions, demergers, fundraises, leadership changes, block deals.' },
+      globalPulse: { type: 'string', description: 'Global markets & international news (~500-1000 words) with ### subsections — world indices context (reference the global data), central banks, commodities/oil, major global corporate news from the items.' },
+      whatToWatch: { type: 'array', items: { type: 'string' }, description: '5-8 forward-looking bullets: upcoming data, events, results, or levels to watch, grounded in the news.' },
+      featureTitle: { type: 'string', description: 'Title of a deeper feature/explainer on the single most interesting trending theme of the day.' },
+      featureBody: { type: 'string', description: 'The feature deep-dive (~700-1200 words) with ### subsections — an educational analysis of that trending theme (what it is, why it matters, risks, what to consider). Include 1-2 external entity links and 1-2 internal backlinks.' },
+      tags: { type: 'array', items: { type: 'string' }, description: '5-8 tags (instruments, entities, themes). Include "TWM News".' },
+    },
+    required: ['title', 'slug', 'excerpt', 'coverQuery', 'leadSummary', 'keyInsights', 'marketAnalysis', 'macroView', 'earnings', 'deals', 'globalPulse', 'whatToWatch', 'featureTitle', 'featureBody', 'tags'],
+  },
+} as const;
+
+function reportSystem(region: Region): string {
+  const c = REGION_CFG[region];
+  return `${VOICE}
+
+You are writing a COMPREHENSIVE DAILY MARKET REPORT for the ${c.label} market — a professional, data-dense "market terminal" style briefing (think a serious morning research note), but in The Wealthy Monk's calm, jargon-free voice. It is long and thorough (target 4,000-6,000 words of prose across all sections combined).
+
+You are given (1) a DATA DIGEST of today's real market numbers (indices, sectors, top movers, commodities, FX, bonds, global indices) and (2) a set of today's NEWS ITEMS. The site will insert the data tables and bar charts automatically — DO NOT write tables or add image placeholders yourself. Your job is the analysis prose that surrounds them.
+
+ACCURACY IS PARAMOUNT:
+- For market moves, use the EXACT figures in the DATA DIGEST (e.g. if it says "Nifty 50: 24,572.70 (+1.05%)", use those). Never invent index levels or percentages.
+- For company, macro, deal, and global facts, use ONLY what is stated in the NEWS ITEMS. If a specific number isn't provided, describe it qualitatively. Never fabricate figures, quotes, or events.
+- If the news has little on a section, keep that section shorter rather than padding with invented content.
+
+Indices to reference where relevant: ${c.indices}. Cover image geography: ${c.geo}.
+
+Fill EVERY field of the publish_report tool. Set category context to "${c.category}". Educational only — no buy/sell calls, no disclaimer (the site adds one).`;
+}
+
+/** Full daily market report — structured prose sections; data blocks added later. */
+export async function generateTerminalReport(
+  region: Region,
+  dataDigest: string,
+  news: Candidate[],
+  existing: ExistingPost[] = [],
+  dateLabel?: string,
+): Promise<ReportSections & { category: Category }> {
+  const c = REGION_CFG[region];
+  const newsBlock = news.slice(0, 18)
+    .map((n, i) => `${i + 1}. ${n.title}\n   (${n.source}) ${n.url}\n   ${n.summary || '(no summary)'}`)
+    .join('\n\n');
+  const postList = rankExisting(existing, news.map((n) => n.title).join(' '));
+  const userPrompt = `Write today's ${c.label}-market daily report${dateLabel ? ` for ${dateLabel}` : ''}.
+
+=== TODAY'S MARKET DATA (use these exact numbers) ===
+${dataDigest}
+
+=== TODAY'S ${c.label.toUpperCase()} & GLOBAL NEWS ITEMS (your only source of facts for macro/earnings/deals/global) ===
+${newsBlock}
+
+=== EXISTING WEALTHY MONK POSTS (backlink inline where relevant, by slug) ===
+${postList}
+
+Write the full report via the publish_report tool.`;
+  const input = (await callToolWith(REPORT_TOOL, reportSystem(region), userPrompt, 16000)) as ReportSections;
+  return { ...input, category: c.category };
 }
 
 export async function generateEvergreen(topic: SeedTopic, existing: ExistingPost[] = []): Promise<GeneratedPost> {

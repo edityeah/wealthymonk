@@ -21,9 +21,32 @@ function richText(s: string) {
   return out;
 }
 
+// Notion code-block languages we emit. Anything else falls back to plain text.
+const NOTION_LANGS = new Set(['html', 'json', 'javascript', 'typescript', 'css', 'markdown', 'python', 'bash', 'sql', 'plain text']);
+
+/** rich_text runs for a code block (chunked at Notion's 2000-char run cap). */
+function codeRich(s: string): any[] {
+  const out: any[] = [];
+  for (let i = 0; i < s.length; i += 1900) out.push({ type: 'text', text: { content: s.slice(i, i + 1900) } });
+  return out.length ? out : [{ type: 'text', text: { content: '' } }];
+}
+
+/** Is `line` the start of a markdown pipe table (header) with a separator next? */
+function isTableStart(lines: string[], i: number): boolean {
+  const header = lines[i]?.trim() ?? '';
+  const sep = lines[i + 1]?.trim() ?? '';
+  return header.startsWith('|') && /^\|?[\s:-]*-{1,}[\s:|-]*\|?$/.test(sep) && sep.includes('-');
+}
+function splitRow(line: string): string[] {
+  let s = line.trim();
+  if (s.startsWith('|')) s = s.slice(1);
+  if (s.endsWith('|')) s = s.slice(0, -1);
+  return s.split('|').map((c) => c.trim());
+}
+
 export function mdToBlocks(md: string): any[] {
-  // Very small md → Notion block converter. Headings + paragraphs + lists +
-  // bold/italic. Enough for what the LLM produces.
+  // Small md → Notion block converter: headings, paragraphs, lists, bold/italic,
+  // images, fenced code blocks (used for the SVG exhibits), and pipe tables.
   const blocks: any[] = [];
   const lines = md.split('\n');
   let para: string[] = [];
@@ -32,15 +55,46 @@ export function mdToBlocks(md: string): any[] {
     const text = para.join(' ').trim();
     para = [];
     if (!text) return;
-    blocks.push({
-      object: 'block',
-      type: 'paragraph',
-      paragraph: { rich_text: parseInline(text) },
-    });
+    blocks.push({ object: 'block', type: 'paragraph', paragraph: { rich_text: parseInline(text) } });
   };
 
-  for (let raw of lines) {
+  for (let idx = 0; idx < lines.length; idx++) {
+    const raw = lines[idx];
     const line = raw.trim();
+
+    // Fenced code block ```lang ... ``` — kept verbatim (the SVG exhibits).
+    const fence = line.match(/^```(\w[\w\s]*)?$/);
+    if (fence) {
+      flushPara();
+      const langRaw = (fence[1] ?? '').trim().toLowerCase();
+      const language = NOTION_LANGS.has(langRaw) ? langRaw : 'plain text';
+      const buf: string[] = [];
+      idx++;
+      while (idx < lines.length && lines[idx].trim() !== '```') { buf.push(lines[idx]); idx++; }
+      blocks.push({ object: 'block', type: 'code', code: { rich_text: codeRich(buf.join('\n')), language } });
+      continue;
+    }
+
+    // Markdown pipe table → Notion table block.
+    if (line.startsWith('|') && isTableStart(lines, idx)) {
+      flushPara();
+      const header = splitRow(lines[idx]);
+      idx += 2; // skip header + separator
+      const rows: string[][] = [header];
+      while (idx < lines.length && lines[idx].trim().startsWith('|')) { rows.push(splitRow(lines[idx])); idx++; }
+      idx--; // step back; loop will ++
+      const width = Math.max(...rows.map((r) => r.length));
+      const children = rows.map((r) => {
+        const cells = Array.from({ length: width }, (_, c) => parseInline(r[c] ?? ''));
+        return { object: 'block', type: 'table_row', table_row: { cells } };
+      });
+      blocks.push({
+        object: 'block', type: 'table',
+        table: { table_width: width, has_column_header: true, has_row_header: false, children },
+      });
+      continue;
+    }
+
     if (!line) { flushPara(); continue; }
 
     // Standalone image line: ![alt](url) — becomes a Notion image block.
@@ -50,11 +104,9 @@ export function mdToBlocks(md: string): any[] {
       const alt = imgMatch[1] || 'image';
       const url = imgMatch[2];
       blocks.push({
-        object: 'block',
-        type: 'image',
+        object: 'block', type: 'image',
         image: {
-          type: 'external',
-          external: { url },
+          type: 'external', external: { url },
           caption: alt && alt !== 'image' ? [{ type: 'text', text: { content: alt } }] : [],
         },
       });
@@ -76,20 +128,12 @@ export function mdToBlocks(md: string): any[] {
     }
     if (li) {
       flushPara();
-      blocks.push({
-        object: 'block',
-        type: 'bulleted_list_item',
-        bulleted_list_item: { rich_text: parseInline(li[1]) },
-      });
+      blocks.push({ object: 'block', type: 'bulleted_list_item', bulleted_list_item: { rich_text: parseInline(li[1]) } });
       continue;
     }
     if (ol) {
       flushPara();
-      blocks.push({
-        object: 'block',
-        type: 'numbered_list_item',
-        numbered_list_item: { rich_text: parseInline(ol[1]) },
-      });
+      blocks.push({ object: 'block', type: 'numbered_list_item', numbered_list_item: { rich_text: parseInline(ol[1]) } });
       continue;
     }
     para.push(line);

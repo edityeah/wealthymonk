@@ -1,6 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
-
-const MODEL = process.env.AGENT_QA_MODEL ?? 'claude-sonnet-4-5-20250929';
+import { textCall, hasKey } from './llm.js';
 
 export interface QaInput { title: string; body: string; sourceSummary?: string; }
 export interface QaResult { status: 'Passed' | 'Flagged'; notes: string; }
@@ -25,22 +23,21 @@ export async function runQa(p: QaInput): Promise<QaResult> {
   const det = deterministicChecks(p);
 
   let llmNotes = '';
-  try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
-    const res = await client.messages.create({
-      model: MODEL,
-      max_tokens: 400,
-      system:
-        'You are a publishing QA reviewer. Given a draft title and body, reply with a single line: ' +
-        'either "OK" if it is internally consistent, on-topic, and free of obvious factual contradictions, ' +
-        'or "FLAG: <short reason>" if not. Be terse.',
-      messages: [{ role: 'user', content: `TITLE: ${p.title}\n\nBODY:\n${p.body.slice(0, 6000)}` }],
-    });
-    const text = res.content.find((c: any) => c.type === 'text') as any;
-    const line = (text?.text ?? '').trim();
-    if (/^FLAG/i.test(line)) llmNotes = line.replace(/^FLAG:?\s*/i, '');
-  } catch (e: any) {
-    llmNotes = `QA LLM check skipped: ${e?.message ?? e}`;
+  if (hasKey()) {
+    try {
+      const out = await textCall({
+        system:
+          'You are a publishing QA reviewer. Given a draft title and body, reply with a single line: ' +
+          'either "OK" if it is internally consistent, on-topic, and free of obvious factual contradictions, ' +
+          'or "FLAG: <short reason>" if not. Be terse.',
+        user: `TITLE: ${p.title}\n\nBODY:\n${p.body.slice(0, 8000)}`,
+        maxTokens: 1000,
+      });
+      const line = (out ?? '').trim();
+      if (/^FLAG/i.test(line)) llmNotes = line.replace(/^FLAG:?\s*/i, '');
+    } catch (e: any) {
+      llmNotes = `QA LLM check skipped: ${e?.message ?? e}`;
+    }
   }
 
   const allIssues = [...det, ...(llmNotes ? [llmNotes] : [])];

@@ -5,12 +5,9 @@
  * images. Every post page renders a standing financial disclaimer, so the model
  * must NOT add its own.
  */
-import Anthropic from '@anthropic-ai/sdk';
+import { toolCall } from './llm.js';
 import type { Candidate, Region } from './discover.js';
 import type { SeedTopic } from './topics.js';
-
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!;
-const MODEL = process.env.AGENT_MODEL ?? 'claude-sonnet-4-6';
 
 export type Category =
   | 'Indian Markets'
@@ -113,18 +110,13 @@ async function callTool(system: string, userPrompt: string, maxTokens: number) {
 }
 
 async function callToolWith(tool: any, system: string, userPrompt: string, maxTokens: number): Promise<any> {
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-  const res = await client.messages.create({
-    model: MODEL,
-    max_tokens: maxTokens,
+  // Our tool defs use Anthropic's `input_schema`; OpenAI functions want `parameters`.
+  return toolCall({
     system,
-    tools: [tool],
-    tool_choice: { type: 'tool', name: tool.name },
-    messages: [{ role: 'user', content: userPrompt }],
+    user: userPrompt,
+    tool: { name: tool.name, description: tool.description, parameters: tool.input_schema },
+    maxTokens,
   });
-  const toolUse = res.content.find((c: any) => c.type === 'tool_use');
-  if (!toolUse || toolUse.type !== 'tool_use') throw new Error('Claude did not return a tool_use block');
-  return toolUse.input;
 }
 
 export async function generatePost(candidate: Candidate, existing: ExistingPost[] = []): Promise<GeneratedPost> {
@@ -306,7 +298,8 @@ ${newsBlock}
 ${postList}
 
 Write the full report via the publish_report tool.`;
-  const input = (await callToolWith(REPORT_TOOL, reportSystem(region), userPrompt, 16000)) as ReportSections;
+  // Generous cap: the report is long AND reasoning tokens count against it.
+  const input = (await callToolWith(REPORT_TOOL, reportSystem(region), userPrompt, 32000)) as ReportSections;
   return { ...input, category: c.category };
 }
 

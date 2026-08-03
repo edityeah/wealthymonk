@@ -14,14 +14,11 @@
  * optional), Pixabay (PIXABAY_API_KEY, optional), Unsplash (UNSPLASH_ACCESS_KEY),
  * plus the source article's image / OG image for news.
  */
-import Anthropic from '@anthropic-ai/sdk';
+import { visionCall, hasKey, textPart, imagePart } from './llm.js';
 
 const UNSPLASH = process.env.UNSPLASH_ACCESS_KEY;
 const PEXELS = process.env.PEXELS_API_KEY;
 const PIXABAY = process.env.PIXABAY_API_KEY;
-// Picking the best image is a simple visual judgment — Haiku handles it well
-// and is ~3-4x cheaper than Sonnet for these image-heavy calls.
-const VISION_MODEL = process.env.AGENT_VISION_MODEL ?? 'claude-haiku-4-5-20251001';
 
 /** A candidate image: a small `thumb` for the vision check, a larger `full` to embed. */
 export interface Candidate { thumb: string; full: string; source: string; }
@@ -137,7 +134,7 @@ function dedupe(cands: Candidate[]): Candidate[] {
  * Show the candidate images to Claude and let it pick the best match for
  * `subject`, or reject all. Returns the chosen Candidate or null.
  *
- * If no ANTHROPIC_API_KEY is available (e.g. local dev), we cannot verify —
+ * If no OPENAI_API_KEY is available (e.g. local dev), we cannot verify —
  * return the first candidate as a best-effort fallback so the pipeline still
  * runs, but in CI the key is always present so vision actually runs.
  */
@@ -151,14 +148,11 @@ export async function selectWithVision(
   // Nothing to choose: a required slot (cover) with one candidate keeps it
   // anyway, so skip the vision call entirely (cost optimization).
   if (list.length === 1 && opts.allowNone === false) return list[0];
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return list[0]; // can't verify offline; best effort
+  if (!hasKey()) return list[0]; // can't verify offline; best effort
 
-  // Anthropic cannot reliably fetch arbitrary image URLs (Wikimedia/Unsplash
-  // return 400 "Unable to download the file"). So we download the bytes here
-  // and send them as base64 — the only reliable way to actually show Claude the
-  // image. Candidates that fail to download or aren't a supported type are
-  // skipped, and the numbering follows the successfully-encoded list.
+  // We download the bytes here and send them as base64 data URIs — the reliable
+  // way to actually show the model the image. Candidates that fail to download
+  // or aren't a supported type are skipped; numbering follows the encoded list.
   const encoded: { cand: Candidate; media_type: string; data: string }[] = [];
   for (const c of list) {
     const img = await toBase64Image(c.thumb);
@@ -168,8 +162,8 @@ export async function selectWithVision(
 
   const content: any[] = [];
   encoded.forEach((e, i) => {
-    content.push({ type: 'text', text: `Image ${i + 1}:` });
-    content.push({ type: 'image', source: { type: 'base64', media_type: e.media_type, data: e.data } });
+    content.push(textPart(`Image ${i + 1}:`));
+    content.push(imagePart(e.media_type, e.data));
   });
 
   const count = encoded.length;
@@ -193,16 +187,11 @@ export async function selectWithVision(
       `screenshot, a logo, a chart, or a diagram; watermarked; or low quality.\n` +
       `Reply with ONLY the number of the best image (1-${count}), or "none" if none reasonably fit.`;
 
-  content.push({ type: 'text', text: instruction });
+  content.push(textPart(instruction));
 
   try {
-    const client = new Anthropic({ apiKey: key });
-    const res = await client.messages.create({
-      model: VISION_MODEL,
-      max_tokens: 16,
-      messages: [{ role: 'user', content }],
-    });
-    const text = (res.content.find((c: any) => c.type === 'text') as any)?.text ?? '';
+    // Budget room for the model's hidden reasoning tokens plus the short answer.
+    const text = await visionCall({ content, maxTokens: 500 });
     const idx = parseVisionChoice(text, count);
     if (idx === null) {
       console.log(`[images] vision(${opts.mode ?? 'inline'}) reply="${text.trim().slice(0, 40)}" → ${opts.allowNone === false ? 'fallback first' : 'none'}`);

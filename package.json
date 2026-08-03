@@ -24,11 +24,11 @@
     "astro": "^5.0.0",
     "cheerio": "^1.2.0",
     "fast-xml-parser": "^5.8.0",
+    "openai": "^7.3.0",
     "pagefind": "^1.5.2",
     "reading-time": "^1.5.0"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.106.0",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",

@@ -2,15 +2,15 @@
 import { CATEGORIES, slugifyTag } from '../lib/categories.ts';
 import { getAllPosts, postSlug } from '../lib/posts.ts';
 
-interface Props { categories?: boolean; }
-const { categories = true } = Astro.props;
+interface Props { categories?: boolean; recentCount?: number; }
+const { categories = true, recentCount = 5 } = Astro.props;
 
 const posts = await getAllPosts();
 const counts = new Map<string, number>();
 for (const p of posts) {
   if (p.data.category) counts.set(p.data.category, (counts.get(p.data.category) ?? 0) + 1);
 }
-const recent = posts.slice(0, 5);
+const recent = posts.slice(0, recentCount);
 ---
 <aside class="sidebar">
   {categories && (

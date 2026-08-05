@@ -10,6 +10,7 @@ import ReadingProgress from '../../components/ReadingProgress.astro';
 import ShareButtons from '../../components/ShareButtons.astro';
 import LikeButton from '../../components/LikeButton.astro';
 import RelatedPosts from '../../components/RelatedPosts.astro';
+import Sidebar from '../../components/Sidebar.astro';
 import CommentSection from '../../components/CommentSection.astro';
 import AdUnit from '../../components/AdUnit.astro';
 import { getAllPosts, postSlug, getAdjacentInSeries } from '../../lib/posts.ts';
@@ -70,6 +71,7 @@ const jsonLd = [
 >
   <ReadingProgress />
   <Breadcrumbs crumbs={crumbs} />
+  <div class="with-sidebar post-layout">
   <article class="prose">
     <header class="article-header">
       {post.data.series && (
@@ -111,6 +113,8 @@ const jsonLd = [
     <SeriesNav prev={prev} next={next} />
     <Disclaimer />
   </article>
+  <Sidebar />
+  </div>
 
   <RelatedPosts posts={related} />
 

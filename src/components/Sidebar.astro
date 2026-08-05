@@ -27,16 +27,23 @@ const recent = posts.slice(0, 5);
     <ul class="sidebar-recent">
       {recent.map((p) => (
         <li>
-          <a href={`/posts/${postSlug(p)}/`}>{p.data.title}</a>
-          <span class="meta">{p.data.publishDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          <a class="recent-item" href={`/posts/${postSlug(p)}/`}>
+            {p.data.cover && (
+              <img class="recent-thumb" src={p.data.cover} alt="" loading="lazy" width="76" height="57" />
+            )}
+            <span class="recent-text">
+              <span class="recent-title">{p.data.title}</span>
+              <span class="meta">{p.data.publishDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            </span>
+          </a>
         </li>
       ))}
     </ul>
   </div>
 
-  <div class="sidebar-card">
-    <h3>Start here</h3>
-    <p style="margin:0 0 0.7rem;font-size:0.9rem;color:var(--muted);">New to markets? Take the free course from the top.</p>
-    <a class="btn" href="/invested/">InvestED →</a>
+  <div class="sidebar-card sidebar-course">
+    <h3>Free course</h3>
+    <p style="margin:0 0 0.8rem;font-size:0.9rem;color:var(--muted);">New to the markets? <strong>InvestED</strong> explains investing from scratch — free, step by step.</p>
+    <a class="btn" href="/invested/">Start InvestED →</a>
   </div>
 </aside>

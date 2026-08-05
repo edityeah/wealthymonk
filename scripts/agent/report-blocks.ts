@@ -97,6 +97,19 @@ export function marketDataSections(d: MarketData, region: MarketRegion): string 
   return out.filter((l) => l !== undefined).join('\n');
 }
 
+/**
+ * A compact "at a glance" block for a trending post centered on one ticker:
+ * a small table (the stock/index + the region's headline indices for context)
+ * and a single bar-chart exhibit of their daily % moves. `main` is the story's
+ * subject; `context` are the headline indices.
+ */
+export function snapshotBlock(main: Quote, context: Quote[]): string {
+  const all = [main, ...context.filter((c) => c.symbol !== main.symbol)];
+  const table = mdTable(['', 'Last', 'Change', 'Prev Close'], quoteRows(all));
+  const svg = barChartSVG('Today’s move', toBars(all), { caption: `${main.name} vs headline indices, % change on the day.` });
+  return ['### At a glance', '', table, '', htmlBlock(svg)].join('\n');
+}
+
 /** A compact, model-readable digest of the data so the AI can analyse it. */
 export function dataDigestForModel(d: MarketData): string {
   const line = (q: Quote) => `${q.name}: ${fmtNum(q.price)} (${fmtPct(q.changePct)})`;

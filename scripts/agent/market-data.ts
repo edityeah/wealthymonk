@@ -19,7 +19,7 @@ export interface Quote {
 
 const YF = 'https://query1.finance.yahoo.com/v8/finance/chart/';
 
-async function fetchQuote(symbol: string, displayName?: string): Promise<Quote | null> {
+export async function fetchQuote(symbol: string, displayName?: string): Promise<Quote | null> {
   try {
     const r = await fetch(`${YF}${encodeURIComponent(symbol)}?interval=1d&range=2d`, {
       headers: { 'User-Agent': 'Mozilla/5.0 (wealthymonk-agent)' },
@@ -165,6 +165,11 @@ export async function fetchMarketData(region: MarketRegion): Promise<MarketData>
     headline, indices, sectors, gainers, losers, commodities, fx, bonds, global,
     asOf: new Date().toISOString(),
   };
+}
+
+/** The region's 2-3 headline indices — context for a single-ticker snapshot. */
+export async function regionHeadlines(region: MarketRegion): Promise<Quote[]> {
+  return fetchAll(REGION_MAP[region].headline);
 }
 
 if (process.argv[1]?.endsWith('market-data.ts')) {

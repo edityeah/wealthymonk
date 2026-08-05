@@ -303,6 +303,87 @@ Write the full report via the publish_report tool.`;
   return { ...input, category: c.category };
 }
 
+// ── Trending-story explainer ────────────────────────────────────────────────
+
+export interface TrendingResult {
+  title: string;
+  slug: string;
+  excerpt: string;
+  coverQuery: string;
+  tags: string[];
+  chosenStory: string;   // short label of the story it covered (for dedup)
+  sourceUrl: string;     // the specific source it built on
+  ticker: string;        // Yahoo symbol if the story centers on one instrument, else ''
+  tickerLabel: string;   // human name for the ticker
+  body: string;
+  category: Category;
+}
+
+const TREND_TOOL = {
+  name: 'publish_trending',
+  description: 'Save the trending-story explainer',
+  input_schema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'Engaging, specific headline naming the story. 6-14 words, not clickbait.' },
+      slug: { type: 'string', description: 'URL slug, lowercase hyphenated, 4-9 words.', pattern: '^[a-z0-9-]+$' },
+      excerpt: { type: 'string', description: 'One-sentence summary of the story. 130-180 characters.' },
+      coverQuery: { type: 'string', description: 'Concrete Unsplash cover query, geography matching the market (India-anchored for the India post, US-anchored for US). Objects/places over people. Not abstract.' },
+      tags: { type: 'array', items: { type: 'string' }, description: '4-6 tags (entities, instruments, theme). Include "TWM News".' },
+      chosenStory: { type: 'string', description: 'A short label (5-10 words) of the single story you chose to cover — used to avoid duplicate coverage.' },
+      sourceUrl: { type: 'string', description: 'The URL of the specific source item your story is built on.' },
+      ticker: { type: 'string', description: 'If the story centers on ONE publicly-traded instrument you are confident about, its Yahoo Finance symbol; else "". US stocks: plain ticker (NVDA, AAPL). Indian stocks: add .NS (RELIANCE.NS, TATAMOTORS.NS). Indices: ^NSEI (Nifty), ^BSESN (Sensex), ^GSPC (S&P 500), ^IXIC (Nasdaq), ^DJI (Dow). Commodities: GC=F (gold), CL=F (crude), BTC-USD (bitcoin). Leave "" for macro/policy stories or IPOs not yet listed.' },
+      tickerLabel: { type: 'string', description: 'Human name for the ticker (e.g. "Nvidia", "Nifty 50"), or "" if no ticker.' },
+      body: { type: 'string', description: 'Full explainer in Markdown (~800-1400 words). Use ### subsections (e.g. What happened / Why it matters / The context / What to watch). Include 4-6 external entity links, 1-3 internal backlinks by slug, and 1-2 inline image placeholders EXACTLY as ![alt](query:concrete photographable subject). Do NOT write any tables (a data snapshot is added automatically). No H1, no frontmatter, no disclaimer, no "Source:" line.' },
+    },
+    required: ['title', 'slug', 'excerpt', 'coverQuery', 'tags', 'chosenStory', 'sourceUrl', 'ticker', 'tickerLabel', 'body'],
+  },
+} as const;
+
+function trendingSystem(region: Region): string {
+  const c = REGION_CFG[region];
+  return `${VOICE}
+
+You are writing ONE timely, high-traction ${c.label}-market news explainer for a general finance audience — a story people are actively searching and talking about TODAY (an IPO, a big stock move, an earnings surprise, a regulatory or macro development, a crypto swing). This is NOT a whole-market wrap; pick the SINGLE biggest, most interesting story from the items provided and go deep on it.
+
+Make it genuinely readable and useful: lead with what happened in plain language, then why it matters to an ordinary investor/saver, the context and risks, and what to watch next. Define jargon. Be accurate — use ONLY facts present in the provided news items; if a number isn't there, describe it qualitatively. Never invent figures or quotes.
+
+If the story centers on one tradable instrument (a specific stock, index, or commodity), set the ticker field so a live data snapshot can be added; otherwise leave it "".
+
+Cover image geography: ${c.geo}. Output via the publish_trending tool. Set category to "${c.category}".`;
+}
+
+/** One trending-story explainer for a region, chosen from the day's news. */
+export async function generateTrending(
+  region: Region,
+  candidates: Candidate[],
+  existing: ExistingPost[] = [],
+  opts: { dateLabel?: string; avoid?: string[] } = {},
+): Promise<TrendingResult> {
+  const c = REGION_CFG[region];
+  const top = candidates.slice(0, 12);
+  const items = top
+    .map((s, i) => `${i + 1}. ${s.title}\n   (${s.source}) ${s.url}\n   ${s.summary || '(no summary)'}`)
+    .join('\n\n');
+  const postList = rankExisting(existing, top.map((s) => s.title).join(' '));
+  const avoidNote = opts.avoid?.length
+    ? `\nDO NOT cover any of these already-chosen stories — pick a clearly DIFFERENT one:\n- ${opts.avoid.join('\n- ')}\n`
+    : '';
+  const userPrompt = `Write today's trending ${c.label}-market explainer${opts.dateLabel ? ` for ${opts.dateLabel}` : ''}.
+
+Today's ${c.label} finance news to choose from (pick the single biggest/most-trending story and go deep):
+
+${items}
+${avoidNote}
+Existing Wealthy Monk posts you can backlink to inline when relevant (use the slug):
+
+${postList}
+
+Use the publish_trending tool. Set category to "${c.category}". Include "TWM News" in tags.`;
+  const input = (await callToolWith(TREND_TOOL, trendingSystem(region), userPrompt, 6000)) as Omit<TrendingResult, 'category'>;
+  return { ...input, category: c.category };
+}
+
 export async function generateEvergreen(topic: SeedTopic, existing: ExistingPost[] = []): Promise<GeneratedPost> {
   const postList = existing.length ? existing.slice(0, 20).map((p) => `- ${p.title} — slug: ${p.slug}`).join('\n') : '(none yet)';
   const userPrompt = `Write the definitive Wealthy Monk guide on this topic.

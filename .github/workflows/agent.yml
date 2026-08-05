@@ -1,9 +1,9 @@
 name: AI blog-drafting agent
 
-# Two market "Day Starter" briefs per day — one Indian Markets, one US Markets —
-# drafted into Notion (never auto-published). The run is idempotent: it produces
-# only the region(s) not yet drafted today, so hourly slots fill any gap then
-# no-op. Hourly gives headroom against GitHub's scheduled-cron delays/skips.
+# Three trending finance explainers per day — two US-market, one Indian-market —
+# drafted into Notion (never auto-published). The run is idempotent per category:
+# it produces only the slots not yet drafted today, so hourly slots fill any gap
+# then no-op. Hourly gives headroom against GitHub's scheduled-cron delays/skips.
 on:
   schedule:
     - cron: '0 * * * *'

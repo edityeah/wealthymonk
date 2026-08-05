@@ -2,6 +2,9 @@
 import { CATEGORIES, slugifyTag } from '../lib/categories.ts';
 import { getAllPosts, postSlug } from '../lib/posts.ts';
 
+interface Props { categories?: boolean; }
+const { categories = true } = Astro.props;
+
 const posts = await getAllPosts();
 const counts = new Map<string, number>();
 for (const p of posts) {
@@ -10,6 +13,7 @@ for (const p of posts) {
 const recent = posts.slice(0, 5);
 ---
 <aside class="sidebar">
+  {categories && (
   <div class="sidebar-card">
     <h3>Categories</h3>
     <ul class="sidebar-cats">
@@ -21,6 +25,7 @@ const recent = posts.slice(0, 5);
       ))}
     </ul>
   </div>
+  )}
 
   <div class="sidebar-card">
     <h3>Recent posts</h3>
